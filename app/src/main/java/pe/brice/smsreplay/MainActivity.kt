@@ -124,20 +124,30 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
                 startActivity(batteryIntent)
                 timber.log.Timber.d("Battery optimization request dialog opened")
             } catch (e: Exception) {
-                timber.log.Timber.e(e, "Failed to open battery optimization dialog, trying app settings")
-                // 실패 시 앱 설정 화면으로 이동 (fallback)
+                timber.log.Timber.e(e, "Failed to open ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, trying ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS")
+                // 실패 시 배터리 최적화 설정 화면으로 이동 (fallback)
                 try {
-                    val appSettingsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    val batterySettingsIntent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
                         data = Uri.parse("package:$packageName")
                     }
-                    startActivity(appSettingsIntent)
-                    timber.log.Timber.d("App settings opened as fallback - user can navigate to Battery")
+                    startActivity(batterySettingsIntent)
+                    timber.log.Timber.d("Battery optimization settings opened as fallback")
                 } catch (e2: Exception) {
-                    timber.log.Timber.e(e2, "Failed to open app settings, trying general settings")
-                    // 그래도 실패하면 일반 설정 화면 열기
-                    val settingsIntent = Intent(Settings.ACTION_SETTINGS)
-                    startActivity(settingsIntent)
-                    timber.log.Timber.d("General settings opened as last resort")
+                    timber.log.Timber.e(e2, "Failed to open battery optimization settings, trying app settings")
+                    // 그래도 실패하면 앱 설정 화면으로 이동
+                    try {
+                        val appSettingsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.parse("package:$packageName")
+                        }
+                        startActivity(appSettingsIntent)
+                        timber.log.Timber.d("App settings opened as last fallback")
+                    } catch (e3: Exception) {
+                        timber.log.Timber.e(e3, "Failed to open app settings, trying general settings")
+                        // 최후의 수단으로 일반 설정 화면 열기
+                        val settingsIntent = Intent(Settings.ACTION_SETTINGS)
+                        startActivity(settingsIntent)
+                        timber.log.Timber.d("General settings opened as final resort")
+                    }
                 }
             }
         } else {

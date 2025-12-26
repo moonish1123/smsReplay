@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -113,18 +114,10 @@ class ServiceManager(
     fun checkBatteryOptimization(): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
-                val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-
-                // 모든 Android 버전에서 문자열 상수 사용
-                val mode = appOps.checkOpNoThrow(
-                    "ignore_battery_optimizations",
-                    android.os.Process.myUid(),
-                    context.packageName
-                )
-
-                val isIgnoring = mode == AppOpsManager.MODE_ALLOWED
+                val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+                val isIgnoring = pm.isIgnoringBatteryOptimizations(context.packageName)
                 _isIgnoringBatteryOptimizations.value = isIgnoring
-                Timber.d("Battery optimization ignored: $isIgnoring (mode: $mode)")
+                Timber.d("Battery optimization ignored: $isIgnoring")
                 return isIgnoring
             } catch (e: Exception) {
                 Timber.e(e, "Failed to check battery optimization")
