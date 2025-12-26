@@ -174,6 +174,43 @@ fun MainScreen(
                     queueSize = uiState.queueSize
                 )
             }
+
+            // Debug Test Card (개발용)
+            if (uiState.isServiceRunning) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "🧪 테스트",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "SMS 수신 테스트 (가상 메시지 전송)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                            Button(
+                                onClick = { viewModel.testSmsReceiver() },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiary
+                                )
+                            ) {
+                                Text("테스트 SMS 전송")
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
