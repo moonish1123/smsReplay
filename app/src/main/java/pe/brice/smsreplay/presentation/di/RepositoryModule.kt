@@ -8,11 +8,13 @@ import pe.brice.smsreplay.data.local.dao.PendingSmsDao
 import pe.brice.smsreplay.data.local.database.SmsDatabase
 import pe.brice.smsreplay.data.repository.EmailSenderRepositoryImpl
 import pe.brice.smsreplay.data.repository.FilterRepositoryImpl
+import pe.brice.smsreplay.data.repository.PreferenceRepositoryImpl
 import pe.brice.smsreplay.data.repository.SentHistoryRepositoryImpl
 import pe.brice.smsreplay.data.repository.SmtpConfigRepositoryImpl
 import pe.brice.smsreplay.data.repository.SmsQueueRepositoryImpl
 import pe.brice.smsreplay.domain.repository.EmailSenderRepository
 import pe.brice.smsreplay.domain.repository.FilterRepository
+import pe.brice.smsreplay.domain.repository.PreferenceRepository
 import pe.brice.smsreplay.domain.repository.SentHistoryRepository
 import pe.brice.smsreplay.domain.repository.SmtpConfigRepository
 import pe.brice.smsreplay.domain.repository.SmsQueueRepository
@@ -42,6 +44,7 @@ val RepositoryModule = module {
     single<SmsQueueRepository> { SmsQueueRepositoryImpl(get()) }
     single<EmailSenderRepository> { EmailSenderRepositoryImpl(get(), get()) }
     single<SentHistoryRepository> { SentHistoryRepositoryImpl(get()) }
+    single<PreferenceRepository> { PreferenceRepositoryImpl(get()) }
 
     // Service Manager
     single { ServiceManager(get(), get()) }

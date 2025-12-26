@@ -20,4 +20,8 @@ val UseCaseModule = module {
     single { GetSentHistoryUseCase(get()) }
     single { AddSentHistoryUseCase(get()) }
     single { DeleteSentHistoryUseCase(get()) }
+
+    // Preference Use Cases
+    single { GetSecurityConfirmedUseCase(get()) }
+    single { SetSecurityConfirmedUseCase(get()) }
 }

@@ -9,6 +9,8 @@ import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import pe.brice.smsreplay.domain.usecase.GetSmtpConfigUseCase
+import pe.brice.smsreplay.domain.usecase.GetSecurityConfirmedUseCase
+import pe.brice.smsreplay.domain.usecase.SetSecurityConfirmedUseCase
 import pe.brice.smsreplay.service.SmsForegroundService
 import pe.brice.smsreplay.service.ServiceManager
 import pe.brice.smsreplay.work.SmsQueueManager
@@ -22,7 +24,8 @@ class MainViewModel : ViewModel(), KoinComponent {
     private val serviceManager: ServiceManager by inject()
     private val smsQueueManager: SmsQueueManager by inject()
     private val getSmtpConfigUseCase: GetSmtpConfigUseCase by inject()
-    private val securePreferencesManager: pe.brice.smsreplay.data.datastore.SecurePreferencesManager by inject()
+    private val getSecurityConfirmedUseCase: GetSecurityConfirmedUseCase by inject()
+    private val setSecurityConfirmedUseCase: SetSecurityConfirmedUseCase by inject()
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -71,7 +74,7 @@ class MainViewModel : ViewModel(), KoinComponent {
 
     private fun loadSecurityConfirmation() {
         viewModelScope.launch {
-            val isConfirmed = securePreferencesManager.isSecurityConfirmed()
+            val isConfirmed = getSecurityConfirmedUseCase()
             _uiState.value = _uiState.value.copy(isSecurityConfirmed = isConfirmed)
         }
     }
@@ -88,7 +91,7 @@ class MainViewModel : ViewModel(), KoinComponent {
     fun confirmStartService() {
         viewModelScope.launch {
             // 보안 확인 저장
-            securePreferencesManager.setSecurityConfirmed(true)
+            setSecurityConfirmedUseCase(true)
             _uiState.value = _uiState.value.copy(
                 showSecurityDialog = false,
                 isSecurityConfirmed = true
