@@ -96,6 +96,16 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openBatteryOptimization() {
+        // 에뮬레이터는 배터리 최적화가 없으므로 앱 설정 화면으로 이동
+        if (isEmulator()) {
+            timber.log.Timber.d("Emulator detected, opening app settings instead")
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", packageName, null)
+            }
+            startActivity(intent)
+            return
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
                 // Android 6.0+ 배터리 최적화 설정 요청
@@ -128,6 +138,16 @@ class MainActivity : ComponentActivity() {
             startActivity(intent)
             timber.log.Timber.d("General settings opened for Android < 6.0")
         }
+    }
+
+    private fun isEmulator(): Boolean {
+        return (Build.FINGERPRINT.startsWith("generic") ||
+                Build.FINGERPRINT.startsWith("unknown") ||
+                Build.MODEL.contains("google_sdk") ||
+                Build.MODEL.contains("Emulator") ||
+                Build.MODEL.contains("Android SDK built for x86") ||
+                Build.MANUFACTURER.contains("Genymotion") ||
+                (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")))
     }
 }
 
