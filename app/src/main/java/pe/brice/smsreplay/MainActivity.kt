@@ -97,19 +97,36 @@ class MainActivity : ComponentActivity() {
 
     private fun openBatteryOptimization() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val intent = Intent().apply {
-                action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
-                data = Uri.fromParts("package", packageName, null)
-            }
             try {
-                startActivity(intent)
-            } catch (e: Exception) {
-                // 배터리 최적화 설정을 열 수 없는 경우
-                val fallbackIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                // Android 6.0+ 배터리 최적화 설정 요청
+                val intent = Intent().apply {
+                    action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
                     data = Uri.fromParts("package", packageName, null)
                 }
-                startActivity(fallbackIntent)
+                startActivity(intent)
+                timber.log.Timber.d("Battery optimization settings opened")
+            } catch (e: Exception) {
+                timber.log.Timber.e(e, "Failed to open battery optimization, trying app settings")
+                // 배터리 최적화 설정을 열 수 없는 경우 앱 설정 화면으로 이동
+                try {
+                    val appSettingsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", packageName, null)
+                    }
+                    startActivity(appSettingsIntent)
+                    timber.log.Timber.d("App settings opened as fallback")
+                } catch (e2: Exception) {
+                    timber.log.Timber.e(e2, "Failed to open app settings, trying general settings")
+                    // 그래도 실패하면 일반 설정 화면 열기
+                    val settingsIntent = Intent(Settings.ACTION_SETTINGS)
+                    startActivity(settingsIntent)
+                    timber.log.Timber.d("General settings opened as last resort")
+                }
             }
+        } else {
+            // Android 6.0 미만은 일반 설정 화면
+            val intent = Intent(Settings.ACTION_SETTINGS)
+            startActivity(intent)
+            timber.log.Timber.d("General settings opened for Android < 6.0")
         }
     }
 }
