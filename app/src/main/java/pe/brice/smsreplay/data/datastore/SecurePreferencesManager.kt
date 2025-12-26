@@ -24,6 +24,9 @@ class SecurePreferencesManager(private val context: Context) {
         private const val KEY_PASSWORD = "password"
         private const val KEY_SENDER_EMAIL = "sender_email"
         private const val KEY_RECIPIENT_EMAIL = "recipient_email"
+
+        // Security confirmation
+        private const val KEY_SECURITY_CONFIRMED = "security_confirmed"
     }
 
     private val masterKey: MasterKey = MasterKey.Builder(context)
@@ -80,5 +83,19 @@ class SecurePreferencesManager(private val context: Context) {
      */
     suspend fun hasSmtpConfig(): Boolean = withContext(Dispatchers.IO) {
         encryptedPrefs.getString(KEY_USERNAME, null)?.isNotBlank() == true
+    }
+
+    /**
+     * Save security confirmation
+     */
+    suspend fun setSecurityConfirmed(confirmed: Boolean) = withContext(Dispatchers.IO) {
+        encryptedPrefs.edit().putBoolean(KEY_SECURITY_CONFIRMED, confirmed).apply()
+    }
+
+    /**
+     * Check if security was confirmed
+     */
+    suspend fun isSecurityConfirmed(): Boolean = withContext(Dispatchers.IO) {
+        encryptedPrefs.getBoolean(KEY_SECURITY_CONFIRMED, false)
     }
 }

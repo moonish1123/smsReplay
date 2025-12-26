@@ -22,6 +22,7 @@ class MainViewModel : ViewModel(), KoinComponent {
     private val serviceManager: ServiceManager by inject()
     private val smsQueueManager: SmsQueueManager by inject()
     private val getSmtpConfigUseCase: GetSmtpConfigUseCase by inject()
+    private val securePreferencesManager: pe.brice.smsreplay.data.datastore.SecurePreferencesManager by inject()
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -29,6 +30,7 @@ class MainViewModel : ViewModel(), KoinComponent {
     init {
         loadServiceStatus()
         loadQueueStatus()
+        loadSecurityConfirmation()
     }
 
     private fun loadServiceStatus() {
@@ -67,13 +69,32 @@ class MainViewModel : ViewModel(), KoinComponent {
         }
     }
 
+    private fun loadSecurityConfirmation() {
+        viewModelScope.launch {
+            val isConfirmed = securePreferencesManager.isSecurityConfirmed()
+            _uiState.value = _uiState.value.copy(isSecurityConfirmed = isConfirmed)
+        }
+    }
+
     fun startService() {
-        _uiState.value = _uiState.value.copy(showSecurityDialog = true)
+        // 보안 확인이 이미 되어 있으면 바로 시작, 아니면 팝업 표시
+        if (_uiState.value.isSecurityConfirmed) {
+            serviceManager.startMonitoring()
+        } else {
+            _uiState.value = _uiState.value.copy(showSecurityDialog = true)
+        }
     }
 
     fun confirmStartService() {
-        _uiState.value = _uiState.value.copy(showSecurityDialog = false)
-        serviceManager.startMonitoring()
+        viewModelScope.launch {
+            // 보안 확인 저장
+            securePreferencesManager.setSecurityConfirmed(true)
+            _uiState.value = _uiState.value.copy(
+                showSecurityDialog = false,
+                isSecurityConfirmed = true
+            )
+            serviceManager.startMonitoring()
+        }
     }
 
     fun cancelStartService() {
@@ -109,5 +130,6 @@ data class MainUiState(
     val hasPermissions: Boolean = false,
     val queueSize: Int = 0,
     val showSecurityDialog: Boolean = false,
-    val isIgnoringBatteryOptimizations: Boolean = false
+    val isIgnoringBatteryOptimizations: Boolean = false,
+    val isSecurityConfirmed: Boolean = false
 )
