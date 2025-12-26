@@ -20,6 +20,9 @@
     <!-- Notification Permissions (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Battery Optimization Permission -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <!-- Boot Receiver Permission (Optional: Auto-start on boot) -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 

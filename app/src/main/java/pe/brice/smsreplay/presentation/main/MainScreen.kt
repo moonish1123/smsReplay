@@ -307,13 +307,13 @@ fun ServiceStatusCard(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = "배터리 최적화를 끄면 서비스가 안정적으로 동작합니다",
+                        text = "배터리 최적화를 끄면 서비스가 안정적으로 동작합니다\n(앱 설정 → 배터리 → 제한없음)",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f)
                     )
                     TextButton(onClick = onOpenBatteryOptimization) {
-                        Text("설정")
+                        Text("앱 설정")
                     }
                 }
             }
