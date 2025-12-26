@@ -31,15 +31,16 @@ class SmtpSettingsViewModel : ViewModel(), KoinComponent {
     private fun loadSettings() {
         viewModelScope.launch {
             try {
-                val config = getSmtpConfigUseCase()
-                config?.let {
-                    _uiState.value = _uiState.value.copy(
-                        serverAddress = it.serverAddress,
-                        port = it.port.toString(),
-                        username = it.username,
-                        password = it.password,
-                        recipientEmail = it.recipientEmail
-                    )
+                getSmtpConfigUseCase().collect { config ->
+                    config?.let {
+                        _uiState.value = _uiState.value.copy(
+                            serverAddress = it.serverAddress,
+                            port = it.port.toString(),
+                            username = it.username,
+                            password = it.password,
+                            recipientEmail = it.recipientEmail
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(

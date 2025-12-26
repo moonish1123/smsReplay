@@ -2,6 +2,7 @@ package pe.brice.smsreplay.data.repository
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import pe.brice.smtp.model.Email
@@ -30,7 +31,7 @@ class EmailSenderRepositoryImpl(
     override suspend fun sendEmail(email: EmailMessage): SendingResult = withContext(Dispatchers.IO) {
         try {
             // 1. Get SMTP config
-            val smtpConfig = getSmtpConfigUseCase()
+            val smtpConfig = getSmtpConfigUseCase().firstOrNull()
                 ?: return@withContext SendingResult.Failure(
                     SendingResult.ErrorType.AUTHENTICATION_FAILED,
                     "SMTP configuration not found"
@@ -117,7 +118,7 @@ class EmailSenderRepositoryImpl(
      */
     override suspend fun testConnection(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val smtpConfig = getSmtpConfigUseCase()
+            val smtpConfig = getSmtpConfigUseCase().firstOrNull()
                 ?: return@withContext Result.failure(Exception("SMTP config not found"))
 
             val mailSender = MailSender(

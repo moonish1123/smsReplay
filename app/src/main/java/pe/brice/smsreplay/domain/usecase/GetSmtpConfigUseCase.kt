@@ -1,6 +1,7 @@
 package pe.brice.smsreplay.domain.usecase
 
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import pe.brice.smsreplay.domain.model.SmtpConfig
 import pe.brice.smsreplay.domain.repository.SmtpConfigRepository
 
@@ -10,12 +11,9 @@ import pe.brice.smsreplay.domain.repository.SmtpConfigRepository
 class GetSmtpConfigUseCase(
     private val smtpConfigRepository: SmtpConfigRepository
 ) {
-    suspend operator fun invoke(): SmtpConfig? {
-        return try {
-            val config = smtpConfigRepository.getSmtpConfig().first()
+    operator fun invoke(): Flow<SmtpConfig?> {
+        return smtpConfigRepository.getSmtpConfig().map { config ->
             if (config.isConfigured()) config else null
-        } catch (e: Exception) {
-            null
         }
     }
 }

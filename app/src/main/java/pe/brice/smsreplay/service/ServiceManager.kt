@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import pe.brice.smsreplay.domain.usecase.GetSmtpConfigUseCase
@@ -73,8 +74,7 @@ class ServiceManager(
      */
     suspend fun isConfigured(): Boolean {
         return try {
-            val config = getSmtpConfigUseCase()
-            config?.isValid() ?: false
+            getSmtpConfigUseCase().firstOrNull()?.isValid() ?: false
         } catch (e: Exception) {
             Timber.e(e, "Failed to check SMTP configuration")
             false

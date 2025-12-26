@@ -45,10 +45,11 @@ class MainViewModel : ViewModel(), KoinComponent {
         }
 
         viewModelScope.launch {
-            val config = getSmtpConfigUseCase()
-            _uiState.value = _uiState.value.copy(
-                isConfigured = config?.isValid() ?: false
-            )
+            getSmtpConfigUseCase().collect { config ->
+                _uiState.value = _uiState.value.copy(
+                    isConfigured = config?.isValid() ?: false
+                )
+            }
         }
     }
 
