@@ -35,6 +35,9 @@ class ServiceManager(
     private val _hasRequiredPermissions = MutableStateFlow(false)
     val hasRequiredPermissions: StateFlow<Boolean> = _hasRequiredPermissions.asStateFlow()
 
+    private val _isIgnoringBatteryOptimizations = MutableStateFlow(false)
+    val isIgnoringBatteryOptimizations: StateFlow<Boolean> = _isIgnoringBatteryOptimizations.asStateFlow()
+
     /**
      * Start SMS monitoring service
      * Requires: SMTP config + permissions
@@ -107,9 +110,30 @@ class ServiceManager(
     /**
      * Check if battery optimization is ignored
      */
-    fun isIgnoringBatteryOptimizations(): Boolean {
-        // Simplified: return true for now
-        // In production, check actual AppOpsManager state
+    fun checkBatteryOptimization(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+
+                // 모든 Android 버전에서 문자열 상수 사용
+                val mode = appOps.checkOpNoThrow(
+                    "ignore_battery_optimizations",
+                    android.os.Process.myUid(),
+                    context.packageName
+                )
+
+                val isIgnoring = mode == AppOpsManager.MODE_ALLOWED
+                _isIgnoringBatteryOptimizations.value = isIgnoring
+                Timber.d("Battery optimization ignored: $isIgnoring (mode: $mode)")
+                return isIgnoring
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to check battery optimization")
+                _isIgnoringBatteryOptimizations.value = false
+                return false
+            }
+        }
+        // Android 6.0 미만은 배터리 최적화가 없음
+        _isIgnoringBatteryOptimizations.value = true
         return true
     }
 
@@ -152,5 +176,11 @@ class ServiceManager(
      */
     fun refreshPermissions() {
         _hasRequiredPermissions.value = hasAllPermissions()
+        checkBatteryOptimization()
+    }
+
+    init {
+        // 초기화 시 배터리 최적화 상태 체크
+        checkBatteryOptimization()
     }
 }

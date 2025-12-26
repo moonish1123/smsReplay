@@ -124,7 +124,8 @@ fun MainScreen(
                     queueSize = uiState.queueSize,
                     onStartService = { viewModel.startService() },
                     onStopService = { viewModel.stopService() },
-                    onOpenBatteryOptimization = onOpenBatteryOptimization
+                    onOpenBatteryOptimization = onOpenBatteryOptimization,
+                    isIgnoringBatteryOptimizations = uiState.isIgnoringBatteryOptimizations
                 )
             }
 
@@ -243,7 +244,8 @@ fun ServiceStatusCard(
     queueSize: Int,
     onStartService: () -> Unit,
     onStopService: () -> Unit,
-    onOpenBatteryOptimization: () -> Unit
+    onOpenBatteryOptimization: () -> Unit,
+    isIgnoringBatteryOptimizations: Boolean = false
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -294,7 +296,9 @@ fun ServiceStatusCard(
             HorizontalDivider()
 
             // Battery Optimization Warning
-            if (isServiceRunning) {
+            // 배터리 최적화가 꺼져 있지 않고(isIgnoringBatteryOptimizations == false)
+            // 서비스가 실행 중일 때만 표시
+            if (isServiceRunning && !isIgnoringBatteryOptimizations) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),

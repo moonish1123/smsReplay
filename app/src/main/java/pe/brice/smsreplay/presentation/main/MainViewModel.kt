@@ -45,6 +45,12 @@ class MainViewModel : ViewModel(), KoinComponent {
         }
 
         viewModelScope.launch {
+            serviceManager.isIgnoringBatteryOptimizations.collect { isIgnoring ->
+                _uiState.value = _uiState.value.copy(isIgnoringBatteryOptimizations = isIgnoring)
+            }
+        }
+
+        viewModelScope.launch {
             getSmtpConfigUseCase().collect { config ->
                 _uiState.value = _uiState.value.copy(
                     isConfigured = config?.isValid() ?: false
@@ -84,5 +90,6 @@ data class MainUiState(
     val isConfigured: Boolean = false,
     val hasPermissions: Boolean = false,
     val queueSize: Int = 0,
-    val showSecurityDialog: Boolean = false
+    val showSecurityDialog: Boolean = false,
+    val isIgnoringBatteryOptimizations: Boolean = false
 )

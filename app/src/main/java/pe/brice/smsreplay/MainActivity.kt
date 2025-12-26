@@ -23,13 +23,14 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import org.koin.core.component.inject
 import pe.brice.smsreplay.presentation.filter.FilterSettingsScreen
 import pe.brice.smsreplay.presentation.history.SentHistoryScreen
 import pe.brice.smsreplay.presentation.main.MainScreen
 import pe.brice.smsreplay.presentation.smtp.SmtpSettingsScreen
 import pe.brice.smsreplay.ui.theme.SmsReplayTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent {
 
     private val permissions = mutableListOf(
         Manifest.permission.RECEIVE_SMS,
@@ -82,6 +83,14 @@ class MainActivity : ComponentActivity() {
                 onOpenBatteryOptimization = { openBatteryOptimization() }
             )
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // 화면이 다시 그려질 때 배터리 최적화 상태 체크
+        // 사용자가 설정 화면에서 배터리 최적화를 끄고 돌아오면 반영됨
+        val serviceManager by inject<pe.brice.smsreplay.service.ServiceManager>()
+        serviceManager.checkBatteryOptimization()
     }
 
     private fun requestPermissions() {
