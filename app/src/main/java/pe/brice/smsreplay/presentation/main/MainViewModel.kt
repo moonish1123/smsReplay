@@ -61,7 +61,16 @@ class MainViewModel : ViewModel(), KoinComponent {
     }
 
     fun startService() {
+        _uiState.value = _uiState.value.copy(showSecurityDialog = true)
+    }
+
+    fun confirmStartService() {
+        _uiState.value = _uiState.value.copy(showSecurityDialog = false)
         serviceManager.startMonitoring()
+    }
+
+    fun cancelStartService() {
+        _uiState.value = _uiState.value.copy(showSecurityDialog = false)
     }
 
     fun stopService() {
@@ -73,5 +82,6 @@ data class MainUiState(
     val isServiceRunning: Boolean = false,
     val isConfigured: Boolean = false,
     val hasPermissions: Boolean = false,
-    val queueSize: Int = 0
+    val queueSize: Int = 0,
+    val showSecurityDialog: Boolean = false
 )

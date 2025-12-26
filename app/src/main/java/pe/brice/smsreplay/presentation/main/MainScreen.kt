@@ -28,11 +28,65 @@ fun MainScreen(
     onNavigateToSentHistory: () -> Unit,
     onRequestPermissions: () -> Unit,
     onOpenAppSettings: () -> Unit,
+    onOpenBatteryOptimization: () -> Unit,
     allPermissionsGranted: Boolean = false,
     permissionsDenied: Boolean = false,
     viewModel: MainViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    // Security Confirmation Dialog
+    if (uiState.showSecurityDialog) {
+        var userInput by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelStartService() },
+            title = {
+                Text(
+                    text = "⚠️ 보안 확인",
+                    color = MaterialTheme.colorScheme.error
+                )
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "악의적인 목적으로 문자를 전송할 수 있음을 인지하고 있고 자의로 문자 전달 기능을 사용합니다. 사용 중 발생한 책임은 본인에게 있습니다.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "계속하려면 '확인'을 입력하세요:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = userInput,
+                        onValueChange = { userInput = it },
+                        placeholder = { Text("확인") },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (userInput == "확인") {
+                            viewModel.confirmStartService()
+                        }
+                    },
+                    enabled = userInput == "확인"
+                ) {
+                    Text("시작하기")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelStartService() }) {
+                    Text("취소")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -69,7 +123,8 @@ fun MainScreen(
                     isConfigured = uiState.isConfigured,
                     queueSize = uiState.queueSize,
                     onStartService = { viewModel.startService() },
-                    onStopService = { viewModel.stopService() }
+                    onStopService = { viewModel.stopService() },
+                    onOpenBatteryOptimization = onOpenBatteryOptimization
                 )
             }
 
@@ -187,7 +242,8 @@ fun ServiceStatusCard(
     isConfigured: Boolean,
     queueSize: Int,
     onStartService: () -> Unit,
-    onStopService: () -> Unit
+    onStopService: () -> Unit,
+    onOpenBatteryOptimization: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -236,6 +292,31 @@ fun ServiceStatusCard(
             }
 
             HorizontalDivider()
+
+            // Battery Optimization Warning
+            if (isServiceRunning) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "배터리 최적화를 끄면 서비스가 안정적으로 동작합니다",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = onOpenBatteryOptimization) {
+                        Text("설정")
+                    }
+                }
+            }
 
             // Control Buttons
             Row(

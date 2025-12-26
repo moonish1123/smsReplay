@@ -78,7 +78,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             SmsReplayApp(
                 onRequestPermissions = { requestPermissions() },
-                onOpenAppSettings = { openAppSettings() }
+                onOpenAppSettings = { openAppSettings() },
+                onOpenBatteryOptimization = { openBatteryOptimization() }
             )
         }
     }
@@ -93,12 +94,31 @@ class MainActivity : ComponentActivity() {
         }
         startActivity(intent)
     }
+
+    private fun openBatteryOptimization() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val intent = Intent().apply {
+                action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                data = Uri.fromParts("package", packageName, null)
+            }
+            try {
+                startActivity(intent)
+            } catch (e: Exception) {
+                // 배터리 최적화 설정을 열 수 없는 경우
+                val fallbackIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", packageName, null)
+                }
+                startActivity(fallbackIntent)
+            }
+        }
+    }
 }
 
 @Composable
 fun SmsReplayApp(
     onRequestPermissions: () -> Unit,
-    onOpenAppSettings: () -> Unit
+    onOpenAppSettings: () -> Unit,
+    onOpenBatteryOptimization: () -> Unit
 ) {
     val navController = rememberNavController()
     val allPermissionsGranted by MainActivity.allPermissionsGranted
@@ -121,6 +141,7 @@ fun SmsReplayApp(
                 },
                 onRequestPermissions = onRequestPermissions,
                 onOpenAppSettings = onOpenAppSettings,
+                onOpenBatteryOptimization = onOpenBatteryOptimization,
                 allPermissionsGranted = allPermissionsGranted,
                 permissionsDenied = permissionsDenied
             )
