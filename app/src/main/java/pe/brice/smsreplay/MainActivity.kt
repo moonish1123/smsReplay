@@ -119,7 +119,7 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
             try {
                 // 먼저 배터리 최적화 예외 요청 다이얼로그 시도
                 val batteryIntent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                    data = Uri.fromParts("package", packageName, null)
+                    data = Uri.parse("package:$packageName")
                 }
                 startActivity(batteryIntent)
                 timber.log.Timber.d("Battery optimization request dialog opened")
@@ -128,7 +128,7 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
                 // 실패 시 앱 설정 화면으로 이동 (fallback)
                 try {
                     val appSettingsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.fromParts("package", packageName, null)
+                        data = Uri.parse("package:$packageName")
                     }
                     startActivity(appSettingsIntent)
                     timber.log.Timber.d("App settings opened as fallback - user can navigate to Battery")
