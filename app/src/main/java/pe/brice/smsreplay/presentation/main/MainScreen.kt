@@ -62,7 +62,7 @@ fun MainScreen(
                     )
                     OutlinedTextField(
                         value = userInput,
-                        onValueChange = { userInput = it },
+                        onValueChange = { userInput = it.trim() },  // 자동으로 공백 제거
                         placeholder = { Text("확인") },
                         singleLine = true
                     )
