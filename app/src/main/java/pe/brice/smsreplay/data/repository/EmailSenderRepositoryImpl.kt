@@ -55,8 +55,8 @@ class EmailSenderRepositoryImpl(
 
             // 4. Create Email DTO
             val emailDto = Email(
-                from = email.from,
-                to = email.to,
+                from = smtpConfig.senderEmail,  // SMTP 설정의 발신자 이메일 사용
+                to = smtpConfig.recipientEmail, // SMTP 설정의 수신자 이메일 사용
                 subject = email.subject,
                 htmlContent = email.htmlContent
             )
