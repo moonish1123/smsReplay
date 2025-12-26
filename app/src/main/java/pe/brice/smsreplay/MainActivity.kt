@@ -96,7 +96,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openBatteryOptimization() {
-        // 에뮬레이터는 배터리 최적화가 없으므로 앱 설정 화면으로 이동
+        // 에뮬레이터는 배터리 최적화가 없으므로 앱 설정 화면으로 바로 이동
         if (isEmulator()) {
             timber.log.Timber.d("Emulator detected, opening app settings instead")
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
@@ -108,23 +108,27 @@ class MainActivity : ComponentActivity() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
-                // Android 6.0+ 배터리 최적화 설정 화면으로 직접 이동
-                // ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS는 예외 요청 다이얼로그만 뜸
-                // 실제로는 앱 설정 화면에서 배터리 메뉴로 이동해야 함
-                val appSettingsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                // 먼저 배터리 최적화 예외 요청 다이얼로그 시도
+                val batteryIntent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                     data = Uri.fromParts("package", packageName, null)
                 }
-                startActivity(appSettingsIntent)
-                timber.log.Timber.d("App settings opened - user can navigate to Battery optimization")
+                startActivity(batteryIntent)
+                timber.log.Timber.d("Battery optimization request dialog opened")
             } catch (e: Exception) {
-                timber.log.Timber.e(e, "Failed to open app settings")
+                timber.log.Timber.e(e, "Failed to open battery optimization dialog, trying app settings")
+                // 실패 시 앱 설정 화면으로 이동 (fallback)
                 try {
-                    // 실패 시 일반 설정 화면 열기
+                    val appSettingsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", packageName, null)
+                    }
+                    startActivity(appSettingsIntent)
+                    timber.log.Timber.d("App settings opened as fallback - user can navigate to Battery")
+                } catch (e2: Exception) {
+                    timber.log.Timber.e(e2, "Failed to open app settings, trying general settings")
+                    // 그래도 실패하면 일반 설정 화면 열기
                     val settingsIntent = Intent(Settings.ACTION_SETTINGS)
                     startActivity(settingsIntent)
-                    timber.log.Timber.d("General settings opened as fallback")
-                } catch (e2: Exception) {
-                    timber.log.Timber.e(e2, "Failed to open general settings")
+                    timber.log.Timber.d("General settings opened as last resort")
                 }
             }
         } else {
