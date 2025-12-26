@@ -49,7 +49,7 @@ class SendSmsAsEmailUseCase(
         val emailMessage = EmailMessage(
             from = "", // Will be set from SMTP config
             to = "",   // Will be set from SMTP config
-            subject = "${sms.sender} (${sms.getFormattedTime()})",
+            subject = "[FW SMS] ${sms.sender} (${sms.getFormattedTime()})",
             htmlContent = htmlTemplate,
             timestamp = sms.timestamp
         )
