@@ -236,13 +236,18 @@ fun InfoCard() {
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Gmail: smtp.gmail.com:587 (TLS)\nNaver: smtp.naver.com:587 (TLS)\nDaum: smtp.daum.net:465 (SSL)",
+                text = "SMTP 설정은 각 메일 서비스 안내에 따르도록 해주세요",
                 style = MaterialTheme.typography.bodySmall
             )
             Text(
-                text = "⚠️ Naver/Daum은 앱 비밀번호를 생성해야 합니다\n(일반 비밀번호 사용 불가)",
+                text = "⚠️ 대부분의 메일 서비스는 앱 비밀번호를 별도로 발급받아야 사용이 가능합니다.\n(일반 비밀번호 사용 불가)",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error
+            )
+            Text(
+                text = "🔒 TLS 우선, 자동으로 SSL로 재시도합니다",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
             )
         }
     }

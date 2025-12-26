@@ -25,26 +25,49 @@ class MailSender(
 
     /**
      * Send email asynchronously
+     * Tries TLS first, falls back to SSL if needed
      * @return Result<Unit> for success or error
      */
     suspend fun sendEmail(email: Email): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            // Validate email
-            if (!email.isValid()) {
-                return@withContext Result.failure(
-                    IllegalArgumentException("Invalid email data")
+        // Validate email
+        if (!email.isValid()) {
+            return@withContext Result.failure(
+                IllegalArgumentException("Invalid email data")
+            )
+        }
+
+        // Try TLS first (preferred), then SSL fallback
+        val tlsResult: Result<Unit> = trySendWithEmail(email, useSsl = false)
+
+        tlsResult.fold(
+            onSuccess = { Result.success(it) },
+            onFailure = { tlsException ->
+                // TLS failed, try SSL as fallback
+                val sslResult: Result<Unit> = trySendWithEmail(email, useSsl = true)
+                sslResult.fold(
+                    onSuccess = { Result.success(it) },
+                    onFailure = { sslException ->
+                        // Both failed, return the original TLS error with SSL context
+                        Result.failure(
+                            SmtpException(
+                                "TLS failed: ${tlsException.message}. SSL fallback also failed: ${sslException.message}",
+                                tlsException
+                            )
+                        )
+                    }
                 )
             }
+        )
+    }
 
-            // Create mail session
-            val session = createSession()
-
-            // Create message
+    /**
+     * Try sending email with specified SSL/TLS mode
+     */
+    private suspend fun trySendWithEmail(email: Email, useSsl: Boolean): Result<Unit> {
+        return try {
+            val session = createSession(useSsl)
             val message = createMimeMessage(session, email)
-
-            // Send message
             Transport.send(message)
-
             Result.success(Unit)
         } catch (e: AuthenticationFailedException) {
             Result.failure(
@@ -56,7 +79,7 @@ class MailSender(
             )
         } catch (e: MessagingException) {
             Result.failure(
-                SmtpException("SMTP error: ${e.message}", e)
+                SmtpException("SMTP ${if (useSsl) "SSL" else "TLS"} error: ${e.message}", e)
             )
         } catch (e: Exception) {
             Result.failure(
@@ -67,30 +90,31 @@ class MailSender(
 
     /**
      * Create JavaMail Session with authentication
+     * Tries TLS first, falls back to SSL if needed
      */
-    private fun createSession(): Session {
+    private fun createSession(useSsl: Boolean = false): Session {
         val props = Properties().apply {
             // SMTP server settings
             put("mail.smtp.host", serverAddress)
             put("mail.smtp.port", port.toString())
             put("mail.smtp.auth", "true")
 
-            // SSL/TLS settings based on port
-            when (port) {
-                465 -> {
-                    // SSL for port 465 (Daum, Gmail SSL, etc.)
-                    put("mail.smtp.ssl.enable", "true")
-                    put("mail.smtp.ssl.checkserveridentity", "true")
-                    put("mail.smtp.socketFactory.port", port.toString())
-                    put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory")
-                    put("mail.smtp.socketFactory.fallback", "false")
-                }
-                587, 25 -> {
-                    // TLS (STARTTLS) for port 587 or 25
-                    put("mail.smtp.starttls.enable", "true")
-                    put("mail.smtp.starttls.required", "true")
-                }
+            // SSL/TLS settings
+            if (useSsl) {
+                // SSL mode (for port 465 or fallback)
+                put("mail.smtp.ssl.enable", "true")
+                put("mail.smtp.ssl.checkserveridentity", "true")
+                put("mail.smtp.socketFactory.port", port.toString())
+                put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory")
+                put("mail.smtp.socketFactory.fallback", "false")
+            } else {
+                // TLS mode (STARTTLS) - preferred for security
+                put("mail.smtp.starttls.enable", "true")
+                put("mail.smtp.starttls.required", "true")
             }
+
+            // Force TLSv1.2 or higher for security (disable SSLv3)
+            put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3")
 
             // Timeout settings
             put("mail.smtp.connectiontimeout", TIMEOUT.toString())
@@ -137,17 +161,46 @@ class MailSender(
 
     /**
      * Test SMTP connection
+     * Tries TLS first, falls back to SSL if needed
      */
     suspend fun testConnection(): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            val session = createSession()
+        // Try TLS first (preferred), then SSL fallback
+        val tlsResult: Result<Unit> = tryConnect(useSsl = false)
+
+        tlsResult.fold(
+            onSuccess = { Result.success(it) },
+            onFailure = { tlsException ->
+                // TLS failed, try SSL as fallback
+                val sslResult: Result<Unit> = tryConnect(useSsl = true)
+                sslResult.fold(
+                    onSuccess = { Result.success(it) },
+                    onFailure = { sslException ->
+                        // Both failed, return the original TLS error with SSL context
+                        Result.failure(
+                            SmtpException(
+                                "TLS failed: ${tlsException.message}. SSL fallback also failed: ${sslException.message}",
+                                tlsException
+                            )
+                        )
+                    }
+                )
+            }
+        )
+    }
+
+    /**
+     * Try connection with specified SSL/TLS mode
+     */
+    private suspend fun tryConnect(useSsl: Boolean): Result<Unit> {
+        return try {
+            val session = createSession(useSsl)
             val transport = session.getTransport("smtp")
             transport.connect()
             transport.close()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(
-                SmtpException("Connection test failed: ${e.message}", e)
+                SmtpException("SMTP ${if (useSsl) "SSL" else "TLS"} connection failed: ${e.message}", e)
             )
         }
     }
