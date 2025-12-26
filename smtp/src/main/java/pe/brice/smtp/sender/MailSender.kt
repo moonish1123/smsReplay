@@ -75,9 +75,22 @@ class MailSender(
             put("mail.smtp.port", port.toString())
             put("mail.smtp.auth", "true")
 
-            // TLS/SSL settings
-            put("mail.smtp.starttls.enable", "true")
-            put("mail.smtp.starttls.required", "true")
+            // SSL/TLS settings based on port
+            when (port) {
+                465 -> {
+                    // SSL for port 465 (Daum, Gmail SSL, etc.)
+                    put("mail.smtp.ssl.enable", "true")
+                    put("mail.smtp.ssl.checkserveridentity", "true")
+                    put("mail.smtp.socketFactory.port", port.toString())
+                    put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory")
+                    put("mail.smtp.socketFactory.fallback", "false")
+                }
+                587, 25 -> {
+                    // TLS (STARTTLS) for port 587 or 25
+                    put("mail.smtp.starttls.enable", "true")
+                    put("mail.smtp.starttls.required", "true")
+                }
+            }
 
             // Timeout settings
             put("mail.smtp.connectiontimeout", TIMEOUT.toString())
