@@ -1,11 +1,10 @@
 package pe.brice.smsreplay.service
 
 import android.Manifest
-import android.app.AppOpsManager
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
@@ -13,42 +12,30 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import pe.brice.smsreplay.domain.usecase.GetSmtpConfigUseCase
 import timber.log.Timber
+import androidx.core.net.toUri
 
 /**
  * Service Manager for SMS monitoring service lifecycle
- * Handles permissions, battery optimization, and service state
+ * Responsible ONLY for service start/stop and state management
+ *
+ * Note: This is an infrastructure service, not part of Domain Layer
  */
-class ServiceManager(
-    private val context: Context,
-    getSmtpConfigUseCase: GetSmtpConfigUseCase
-) : KoinComponent {
-
-    private val getSmtpConfigUseCase: GetSmtpConfigUseCase by inject()
+class ServiceManager(private val context: Context) {
 
     private val _isServiceRunning = MutableStateFlow(false)
     val isServiceRunning: StateFlow<Boolean> = _isServiceRunning.asStateFlow()
 
-    private val _hasRequiredPermissions = MutableStateFlow(false)
-    val hasRequiredPermissions: StateFlow<Boolean> = _hasRequiredPermissions.asStateFlow()
-
-    private val _isIgnoringBatteryOptimizations = MutableStateFlow(false)
-    val isIgnoringBatteryOptimizations: StateFlow<Boolean> = _isIgnoringBatteryOptimizations.asStateFlow()
+    init {
+        // Check if service is actually running on initialization
+        _isServiceRunning.value = isServiceActuallyRunning()
+        Timber.d("ServiceManager initialized: isServiceRunning=${_isServiceRunning.value}")
+    }
 
     /**
      * Start SMS monitoring service
-     * Requires: SMTP config + permissions
      */
     fun startMonitoring() {
-        if (!hasAllPermissions()) {
-            Timber.w("Cannot start service: Missing permissions")
-            return
-        }
-
         if (_isServiceRunning.value) {
             Timber.d("Service already running")
             return
@@ -74,21 +61,46 @@ class ServiceManager(
     }
 
     /**
-     * Check if SMTP is configured
+     * Update service state from external sources (e.g., service callbacks)
      */
-    suspend fun isConfigured(): Boolean {
-        return try {
-            getSmtpConfigUseCase().firstOrNull()?.isValid() ?: false
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to check SMTP configuration")
-            false
-        }
+    fun updateServiceState(isRunning: Boolean) {
+        _isServiceRunning.value = isRunning
+        Timber.d("Service state updated: isRunning=$isRunning")
     }
 
     /**
-     * Check all required permissions
+     * Check if service is actually running in the system
+     * Uses ActivityManager to check real service status
      */
-    fun hasAllPermissions(): Boolean {
+    private fun isServiceActuallyRunning(): Boolean {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val runningServices = activityManager.getRunningServices(Integer.MAX_VALUE)
+
+        return runningServices.any { serviceInfo ->
+            serviceInfo.service.className == SmsForegroundService::class.java.name
+        }
+    }
+}
+
+/**
+ * Permission Manager for checking app permissions
+ * Separated from ServiceManager for single responsibility
+ */
+class PermissionManager(private val context: Context) {
+
+    private val _hasRequiredPermissions = MutableStateFlow(false)
+    val hasRequiredPermissions: StateFlow<Boolean> = _hasRequiredPermissions.asStateFlow()
+
+    init {
+        // Check permissions on initialization
+        _hasRequiredPermissions.value = checkAllPermissions()
+        Timber.d("PermissionManager initialized: hasPermissions=${_hasRequiredPermissions.value}")
+    }
+
+    /**
+     * Check all required permissions for SMS monitoring
+     */
+    fun checkAllPermissions(): Boolean {
         val smsPermission = ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.RECEIVE_SMS
@@ -105,11 +117,34 @@ class ServiceManager(
 
         val result = smsPermission && notificationPermission
         _hasRequiredPermissions.value = result
+        Timber.d("Permissions checked: hasPermissions=$result")
         return result
     }
 
     /**
-     * Check if battery optimization is ignored
+     * Refresh permission state
+     */
+    fun refresh() {
+        _hasRequiredPermissions.value = checkAllPermissions()
+    }
+}
+
+/**
+ * Battery Optimization Manager for checking battery optimization status
+ * Separated from ServiceManager for single responsibility
+ */
+class BatteryOptimizationManager(private val context: Context) {
+
+    private val _isIgnoringBatteryOptimizations = MutableStateFlow(false)
+    val isIgnoringBatteryOptimizations: StateFlow<Boolean> = _isIgnoringBatteryOptimizations.asStateFlow()
+
+    init {
+        // Check battery optimization on initialization
+        checkBatteryOptimization()
+    }
+
+    /**
+     * Check if battery optimization is ignored for this app
      */
     fun checkBatteryOptimization(): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -134,46 +169,16 @@ class ServiceManager(
      * Create intent to request battery optimization exemption
      */
     fun createBatteryOptimizationIntent(): Intent {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Intent(
-                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                Uri.parse("package:${context.packageName}")
-            )
-        } else {
-            Intent()
-        }
+        return Intent(
+            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+            "package:${context.packageName}".toUri()
+        )
     }
 
     /**
-     * Create intent to app notification settings
+     * Refresh battery optimization state
      */
-    fun createNotificationSettingsIntent(): Intent {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-            }
-        } else {
-            Intent()
-        }
-    }
-
-    /**
-     * Update service state from external sources
-     */
-    fun updateServiceState(isRunning: Boolean) {
-        _isServiceRunning.value = isRunning
-    }
-
-    /**
-     * Refresh permission state
-     */
-    fun refreshPermissions() {
-        _hasRequiredPermissions.value = hasAllPermissions()
-        checkBatteryOptimization()
-    }
-
-    init {
-        // 초기화 시 배터리 최적화 상태 체크
+    fun refresh() {
         checkBatteryOptimization()
     }
 }

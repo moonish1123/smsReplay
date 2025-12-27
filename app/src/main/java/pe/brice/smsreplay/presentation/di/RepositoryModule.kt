@@ -18,14 +18,13 @@ import pe.brice.smsreplay.domain.repository.PreferenceRepository
 import pe.brice.smsreplay.domain.repository.SentHistoryRepository
 import pe.brice.smsreplay.domain.repository.SmtpConfigRepository
 import pe.brice.smsreplay.domain.repository.SmsQueueRepository
-import pe.brice.smsreplay.domain.usecase.AddSentHistoryUseCase
-import pe.brice.smsreplay.domain.usecase.GetSmtpConfigUseCase
-import pe.brice.smsreplay.service.ServiceManager
 import pe.brice.smsreplay.work.SmsQueueManager
 
 /**
  * Koin DI Module for Repositories
  * Binds interfaces to implementations
+ *
+ * Clean Architecture: Data Layer implementations only
  */
 val RepositoryModule = module {
 
@@ -42,13 +41,26 @@ val RepositoryModule = module {
     single<SmtpConfigRepository> { SmtpConfigRepositoryImpl(get()) }
     single<FilterRepository> { FilterRepositoryImpl(get()) }
     single<SmsQueueRepository> { SmsQueueRepositoryImpl(get()) }
-    single<EmailSenderRepository> { EmailSenderRepositoryImpl(get(), get()) }
+    single<EmailSenderRepository> { EmailSenderRepositoryImpl(get()) }
     single<SentHistoryRepository> { SentHistoryRepositoryImpl(get()) }
     single<PreferenceRepository> { PreferenceRepositoryImpl(get()) }
 
-    // Service Manager
-    single { ServiceManager(get(), get()) }
-
-    // Queue Manager
+    // Queue Manager (infrastructure service)
     single { SmsQueueManager(get()) }
+}
+
+/**
+ * Koin DI Module for Infrastructure Services
+ * Android-specific services that don't belong to Domain Layer
+ */
+val InfrastructureModule = module {
+
+    // Service Manager
+    single { pe.brice.smsreplay.service.ServiceManager(get()) }
+
+    // Permission Manager
+    single { pe.brice.smsreplay.service.PermissionManager(get()) }
+
+    // Battery Optimization Manager
+    single { pe.brice.smsreplay.service.BatteryOptimizationManager(get()) }
 }

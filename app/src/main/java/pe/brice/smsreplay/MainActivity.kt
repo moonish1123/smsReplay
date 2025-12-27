@@ -23,12 +23,16 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.core.component.inject
 import pe.brice.smsreplay.presentation.filter.FilterSettingsScreen
 import pe.brice.smsreplay.presentation.history.SentHistoryScreen
 import pe.brice.smsreplay.presentation.main.MainScreen
 import pe.brice.smsreplay.presentation.smtp.SmtpSettingsScreen
 import pe.brice.smsreplay.ui.theme.SmsReplayTheme
+import androidx.core.net.toUri
 
 class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent {
 
@@ -76,6 +80,25 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
             requestPermissions()
         }
 
+        // Auto-start service if configured
+        val serviceManager by inject<pe.brice.smsreplay.service.ServiceManager>()
+        val permissionManager by inject<pe.brice.smsreplay.service.PermissionManager>()
+        val canStartMonitoringUseCase by inject<pe.brice.smsreplay.domain.usecase.CanStartMonitoringUseCase>()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val isConfigured = canStartMonitoringUseCase()
+                val hasPermissions = permissionManager.checkAllPermissions()
+
+                if (isConfigured && hasPermissions && !serviceManager.isServiceRunning.value) {
+                    timber.log.Timber.i("Auto-starting service on app launch")
+                    serviceManager.startMonitoring()
+                }
+            } catch (e: Exception) {
+                timber.log.Timber.e(e, "Failed to auto-start service")
+            }
+        }
+
         setContent {
             SmsReplayApp(
                 onRequestPermissions = { requestPermissions() },
@@ -89,8 +112,8 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
         super.onResume()
         // 화면이 다시 그려질 때 배터리 최적화 상태 체크
         // 사용자가 설정 화면에서 배터리 최적화를 끄고 돌아오면 반영됨
-        val serviceManager by inject<pe.brice.smsreplay.service.ServiceManager>()
-        serviceManager.checkBatteryOptimization()
+        val batteryOptimizationManager by inject<pe.brice.smsreplay.service.BatteryOptimizationManager>()
+        batteryOptimizationManager.checkBatteryOptimization()
     }
 
     private fun requestPermissions() {
@@ -119,7 +142,7 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
             try {
                 // 먼저 배터리 최적화 예외 요청 다이얼로그 시도
                 val batteryIntent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                    data = Uri.parse("package:$packageName")
+                    data = "package:$packageName".toUri()
                 }
                 startActivity(batteryIntent)
                 timber.log.Timber.d("Battery optimization request dialog opened")
@@ -128,7 +151,7 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
                 // 실패 시 배터리 최적화 설정 화면으로 이동 (fallback)
                 try {
                     val batterySettingsIntent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
-                        data = Uri.parse("package:$packageName")
+                        data = "package:$packageName".toUri()
                     }
                     startActivity(batterySettingsIntent)
                     timber.log.Timber.d("Battery optimization settings opened as fallback")
@@ -137,7 +160,7 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
                     // 그래도 실패하면 앱 설정 화면으로 이동
                     try {
                         val appSettingsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            data = Uri.parse("package:$packageName")
+                            data = "package:$packageName".toUri()
                         }
                         startActivity(appSettingsIntent)
                         timber.log.Timber.d("App settings opened as last fallback")

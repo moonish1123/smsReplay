@@ -2,10 +2,11 @@ package pe.brice.smtp.model
 
 /**
  * Email data transfer object for SMTP sending
+ * Supports multiple recipients separated by comma
  */
 data class Email(
     val from: String,           // Sender email
-    val to: String,             // Recipient email
+    val to: String,             // Recipient emails (comma-separated)
     val subject: String,        // Email subject (sender + timestamp)
     val htmlContent: String     // HTML email body
 ) {
@@ -41,6 +42,7 @@ data class Email(
 
     /**
      * Validate email fields
+     * Supports multiple recipients separated by comma or semicolon
      */
     fun isValid(): Boolean {
         return from.isNotBlank() &&
@@ -48,10 +50,24 @@ data class Email(
                 subject.isNotBlank() &&
                 htmlContent.isNotBlank() &&
                 isValidEmail(from) &&
-                isValidEmail(to)
+                areRecipientEmailsValid()
     }
 
+    /**
+     * Validate sender email
+     */
     private fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+    }
+
+    /**
+     * Validate all recipient emails
+     * Supports multiple emails separated by comma or semicolon
+     */
+    private fun areRecipientEmailsValid(): Boolean {
+        return to.split(",", ";")
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .all { android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches() }
     }
 }

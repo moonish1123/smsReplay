@@ -9,8 +9,9 @@ import pe.brice.smsreplay.domain.model.SmtpConfig
 interface SmtpConfigRepository {
     /**
      * Get SMTP config as Flow
+     * Returns null if config is not set
      */
-    fun getSmtpConfig(): Flow<SmtpConfig>
+    fun getSmtpConfig(): Flow<SmtpConfig?>
 
     /**
      * Save SMTP config

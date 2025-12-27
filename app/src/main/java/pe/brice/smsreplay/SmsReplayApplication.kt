@@ -4,6 +4,7 @@ import android.app.Application
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
+import pe.brice.smsreplay.presentation.di.InfrastructureModule
 import pe.brice.smsreplay.presentation.di.RepositoryModule
 import pe.brice.smsreplay.presentation.di.UseCaseModule
 import pe.brice.smsreplay.presentation.di.ViewModelModule
@@ -23,7 +24,12 @@ class SmsReplayApplication : Application() {
             // Logger for debugging
             androidLogger()
             // Modules
-            modules(RepositoryModule, UseCaseModule, ViewModelModule)
+            modules(
+                RepositoryModule,    // Data Layer
+                UseCaseModule,       // Domain Layer
+                ViewModelModule,     // Presentation Layer
+                InfrastructureModule // Android Infrastructure Services
+            )
         }
 
         // Initialize Timber

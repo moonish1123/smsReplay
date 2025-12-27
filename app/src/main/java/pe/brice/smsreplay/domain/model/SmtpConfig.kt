@@ -19,7 +19,19 @@ data class SmtpConfig(
                 senderEmail.isNotBlank() &&
                 recipientEmail.isNotBlank() &&
                 android.util.Patterns.EMAIL_ADDRESS.matcher(senderEmail).matches() &&
-                android.util.Patterns.EMAIL_ADDRESS.matcher(recipientEmail).matches()
+                areRecipientEmailsValid()
+    }
+
+    /**
+     * Check if recipient emails are valid
+     * Supports multiple emails separated by comma
+     */
+    private fun areRecipientEmailsValid(): Boolean {
+        return recipientEmail
+            .split(",", ";")
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .all { android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches() }
     }
 
     fun isConfigured(): Boolean {

@@ -185,15 +185,24 @@ fun SmtpSettingsScreen(
             }
 
             // Recipient Email
-            OutlinedTextField(
-                value = uiState.recipientEmail,
-                onValueChange = { viewModel.onRecipientEmailChange(it) },
-                label = { Text("수신자 이메일") },
-                placeholder = { Text("recipient@example.com") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                isError = uiState.showErrors && uiState.recipientEmail.isBlank()
-            )
+            Column {
+                OutlinedTextField(
+                    value = uiState.recipientEmail,
+                    onValueChange = { viewModel.onRecipientEmailChange(it) },
+                    label = { Text("수신자 이메일") },
+                    placeholder = { Text("recipient@example.com") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = uiState.showErrors && uiState.recipientEmail.isBlank()
+                )
+                // Helper text for multiple recipients
+                Text(
+                    text = "* 여러 수신자는 쉼표(,)로 구분해주세요",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 

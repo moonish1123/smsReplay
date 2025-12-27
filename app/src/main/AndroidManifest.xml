@@ -54,7 +54,8 @@
             android:name=".service.SmsForegroundService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="dataSync" />
+            android:foregroundServiceType="dataSync"
+            android:stopWithTask="false" />
 
         <!-- SMS Broadcast Receiver -->
         <receiver
@@ -66,10 +67,10 @@
             </intent-filter>
         </receiver>
 
-        <!-- Boot Receiver (Optional: Auto-start service on boot) -->
+        <!-- Boot Receiver (Auto-start service on boot) -->
         <receiver
             android:name=".receiver.BootReceiver"
-            android:enabled="false"
+            android:enabled="true"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

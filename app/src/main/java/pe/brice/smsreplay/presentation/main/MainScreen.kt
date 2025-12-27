@@ -310,7 +310,7 @@ fun ServiceStatusCard(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = if (isServiceRunning) "실행 중" else "중지됨",
+                    text = if (isServiceRunning) "✅ 실행 중" else "⏳ 대기 중",
                     style = MaterialTheme.typography.titleMedium,
                     color = if (isServiceRunning) Color.Green else Color.Gray
                 )
@@ -359,29 +359,22 @@ fun ServiceStatusCard(
                 }
             }
 
-            // Control Buttons
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            // Info text about auto-start
+            if (isConfigured) {
+                Text(
+                    text = "서비스는 앱 시작 시 및 부팅 시 자동으로 시작됩니다",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Start Button (only show when service is not running)
+            if (!isServiceRunning && isConfigured) {
                 Button(
                     onClick = onStartService,
-                    enabled = !isServiceRunning && isConfigured,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(if (isServiceRunning) "실행 중" else "시작")
-                }
-
-                Button(
-                    onClick = onStopService,
-                    enabled = isServiceRunning,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    )
-                ) {
-                    Text("중지")
+                    Text("서비스 시작")
                 }
             }
         }

@@ -5,6 +5,7 @@ import pe.brice.smsreplay.domain.usecase.*
 
 /**
  * Koin DI Module for Use Cases
+ * Domain Layer business logic
  */
 val UseCaseModule = module {
 
@@ -14,7 +15,10 @@ val UseCaseModule = module {
     single { TestSmtpConnectionUseCase(get()) }
     single { GetFilterSettingsUseCase(get()) }
     single { SaveFilterSettingsUseCase(get()) }
-    single { SendSmsAsEmailUseCase(get(), get()) }
+    single { SendSmsAsEmailUseCase(get(), get(), get(), get()) }
+
+    // Service Control Use Cases
+    single { CanStartMonitoringUseCase(get()) }
 
     // Sent History Use Cases
     single { GetSentHistoryUseCase(get()) }
