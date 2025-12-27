@@ -1,11 +1,13 @@
 package pe.brice.smtp.model
 
+import javax.mail.internet.InternetAddress
+
 /**
  * Email data transfer object for SMTP sending
  * Supports multiple recipients separated by comma
  */
 data class Email(
-    val from: String,           // Sender email
+    val from: String,           // Sender email (supports "Name <email>" format)
     val to: String,             // Recipient emails (comma-separated)
     val subject: String,        // Email subject (sender + timestamp)
     val htmlContent: String     // HTML email body
@@ -58,34 +60,32 @@ data class Email(
     }
 
     /**
-     * Validate sender email
+     * Validate sender email using InternetAddress
      * Supports both "email@domain.com" and "Name <email@domain.com>" formats
      */
     private fun isValidFromEmail(email: String): Boolean {
-        val trimmed = email.trim()
-
-        // Extract email from "Name <email@domain.com>" format
-        val emailOnly = when {
-            trimmed.contains("<") && trimmed.contains(">") -> {
-                // Extract part between < and >
-                val start = trimmed.indexOf("<")
-                val end = trimmed.indexOf(">")
-                if (start < end) trimmed.substring(start + 1, end).trim() else trimmed
-            }
-            else -> trimmed
+        return try {
+            InternetAddress(email).validate()
+            true
+        } catch (e: Exception) {
+            false
         }
-
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(emailOnly).matches()
     }
 
     /**
-     * Validate all recipient emails
+     * Validate all recipient emails using InternetAddress
      * Supports multiple emails separated by comma or semicolon
      */
     private fun areRecipientEmailsValid(): Boolean {
-        return to.split(",", ";")
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
-            .all { android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches() }
+        return try {
+            to.split(",", ";")
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .map { InternetAddress(it) }
+                .onEach { it.validate() }
+                .let { true }
+        } catch (e: Exception) {
+            false
+        }
     }
 }
