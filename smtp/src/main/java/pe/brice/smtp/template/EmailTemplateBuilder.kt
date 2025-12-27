@@ -97,13 +97,9 @@ object EmailTemplateBuilder {
                     /* Ad Space Placeholder - for future Google AdSense integration */
                     .ad-space {
                         margin-top: 20px;
-                        padding: 16px;
-                        background-color: #f9f9f9;
-                        border: 1px dashed #cccccc;
+                        height: 100px;
+                        background-color: #f0f0f0;
                         border-radius: 4px;
-                        text-align: center;
-                        font-size: 11px;
-                        color: #999999;
                         ${if (showAd) "" else "display: none;"}
                     }
 
@@ -139,10 +135,8 @@ object EmailTemplateBuilder {
                         <hr class="divider">
                         <div class="message-content">${escapeHtml(body)}</div>
 
-                        <!-- Ad Space Placeholder - for future monetization -->
-                        <div class="ad-space">
-                            광고 영역 (추후 유료화 시 Google AdSense 적용 예정)
-                        </div>
+                        <!-- Ad Space Placeholder - for future Google AdSense -->
+                        <div class="ad-space"></div>
 
                         <div class="footer">
                             SMS Forwarding Service
