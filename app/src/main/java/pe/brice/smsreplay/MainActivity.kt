@@ -56,6 +56,29 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
             // 모든 권한 허용됨
             permissionsDenied.value = false
             allPermissionsGranted.value = true
+
+            // 방어 코드: 권한 부여 후 SMS Receiver 활성화 확인
+            ensureReceiverEnabled()
+        }
+    }
+
+    /**
+     * 방어 코드: SMS Receiver가 활성화되어 있는지 확인하고 필요시 활성화
+     * 일부 제조사는 배터리 최적화로 Receiver를 비활성화할 수 있음
+     */
+    private fun ensureReceiverEnabled() {
+        try {
+            val serviceManager by inject<pe.brice.smsreplay.service.ServiceManager>()
+
+            if (!serviceManager.isReceiverEnabled()) {
+                timber.log.Timber.w("SMS Receiver is disabled, enabling...")
+                serviceManager.ensureReceiverEnabled()
+                timber.log.Timber.i("SMS Receiver enabled successfully")
+            } else {
+                timber.log.Timber.d("SMS Receiver is already enabled")
+            }
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "Failed to ensure SMS receiver enabled")
         }
     }
 
@@ -78,6 +101,9 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
         if (!allGranted) {
             permissionsDenied.value = true
             requestPermissions()
+        } else {
+            // 방어 코드: 권한이 이미 있는 경우 Receiver 활성화 확인
+            ensureReceiverEnabled()
         }
 
         // Auto-start service if configured

@@ -69,6 +69,54 @@ class ServiceManager(private val context: Context) {
     }
 
     /**
+     * Check if SMS receiver is enabled in PackageManager
+     * Some manufacturers may disable receivers for battery optimization
+     * @return true if receiver is enabled, false otherwise
+     */
+    fun isReceiverEnabled(): Boolean {
+        return try {
+            val pm = context.packageManager
+            val receiver = android.content.ComponentName(context, pe.brice.smsreplay.receiver.SmsReceiver::class.java)
+            val state = pm.getComponentEnabledSetting(receiver)
+            val isEnabled = state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED ||
+                           state == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
+            Timber.d("SMS Receiver enabled state: $isEnabled (state=$state)")
+            isEnabled
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to check receiver enabled state")
+            true // Assume enabled if check fails (defensive)
+        }
+    }
+
+    /**
+     * Ensure SMS receiver is enabled
+     * Called after permission grant to activate receiver
+     */
+    fun ensureReceiverEnabled() {
+        try {
+            val pm = context.packageManager
+            val receiver = android.content.ComponentName(context, pe.brice.smsreplay.receiver.SmsReceiver::class.java)
+            val currentState = pm.getComponentEnabledSetting(receiver)
+
+            if (currentState != PackageManager.COMPONENT_ENABLED_STATE_ENABLED &&
+                currentState != PackageManager.COMPONENT_ENABLED_STATE_DEFAULT) {
+
+                Timber.w("SMS Receiver is disabled, enabling it...")
+                pm.setComponentEnabledSetting(
+                    receiver,
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+                Timber.i("SMS Receiver enabled successfully")
+            } else {
+                Timber.d("SMS Receiver is already enabled")
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to enable SMS receiver")
+        }
+    }
+
+    /**
      * Check if service is actually running in the system
      * Uses ActivityManager to check real service status
      */
