@@ -874,651 +874,80 @@ Libraries:
 
 ---
 
+## 🎯 완료된 기능 요약
+
+### 핵심 기능
+✅ **SMS 수신 및 이메일 전송**
+- BroadcastReceiver로 SMS 수신
+- SMTP를 통한 이메일 전송
+- TLS/SSL 자동 감지 및 Fallback (TLS 우선 → 실패 시 SSL)
+- 필터링 기능 (발신자 번호 AND 본문 키워드)
+
+✅ **SMTP 설정 및 연결 테스트**
+- SMTP 서버 설정 (주소, 포트, ID, 비밀번호)
+- 발신자 이메일 자동 생성 (ID@도메인)
+- 수신자 이메일 설정
+- **연결 테스트 기능**: 저장 시 실제 SMTP 연결 테스트
+  - 성공: Toast 메시지 + 홈 화면 자동 이동
+  - 실패: 에러 다이얼로그 표시
+
+✅ **발송 내역 (히스토리)**
+- Room Database v2 (Migration 1→2)
+- 저장 항목: 발신자, 본문, 수신자/발신자 이메일, 전송 시간, 재시도 횟수
+- 자동 저장: 이메일 전송 성공 시 자동 저장
+- 검색 기능: 발신자 번호 또는 본문 키워드
+- 보관 기간: 최대 30일 (자동 삭제)
+- 개별 삭제 기능
+
+✅ **권한 및 보안**
+- SMS 수신/읽기 권한
+- 알림 권한 (Android 13+)
+- 앱 시작 시 자동 권한 요청
+- **보안 확인 팝업**: 서비스 시작 시 '확인' 직접 타이핑 필요
+- 배터리 최적화 설정 화면으로 바로 이동
+
+✅ **서비스 관리**
+- Foreground Service로 SMS 수신 대기
+- 대기열 관리 (네트워크 실패 시 재시도)
+- 부팅 시 자동 시작 (BootReceiver)
+
+---
+
+## 📊 최신 업데이트 (2025-01)
+
+### 커밋 내역
+1. **70496f7** - feat: 발송 내역 기능 및 SMTP 연결 테스트 추가
+2. **c9e3e0f** - chore: update database schema v2 and gradle wrapper
+3. **489f0b5** - fix: SSL/TLS 자동 감지 및 앱 비밀번호 안내 추가
+4. **fd11b83** - refactor: TLS 우선 + SSL fallback 전략으로 변경
+5. **61a03b7** - feat: 서비스 시작 시 보안 확인 팝업 및 배터리 최적화 설정 추가
+
+### 빌드 상태
+✅ **BUILD SUCCESSFUL**
+- compileSdk: 35
+- minSdk: 26
+- targetSdk: 35
+- Kotlin: 2.1.0
+- Compose BOM: 2024.12.01
+- Room: 2.6.1
+
+---
+
 ## 🚀 다음 작업 (Next Steps)
 
+미구현 항목과 테스트 필드 사항은 **ACTION_ITEMS.md** 파일을 참고하세요.
+
 ### 즉시 시작할 수 있는 작업
-1. **Phase 5: 데이터 계층 구현** 시작
-   - RepositoryImpl 클래스들 구현
-   - Data ↔ Domain Mapper 작성
-   - Koin DI 모듈 설정
+1. **기능 테스트** (ACTION_ITEMS.md 참고)
+   - 실제 SMS 수신 후 이메일 전송 확인
+   - SMTP 연결 테스트 (Gmail, Naver, Daum)
+   - UI/UX 테스트
+
+2. **배포 준비**
+   - Release APK 빌드
+   - 서명 설정
+   - Google Play Store 준비 (선택사항)
 
-2. **파일 위치 참조**
-   - Data Models: `app/src/main/java/pe/brice/smsreplay/data/model/`
-   - Domain Models: `app/src/main/java/pe/brice/smsreplay/domain/model/`
-   - Repository Interfaces: `app/src/main/java/pe/brice/smsreplay/domain/repository/`
-   - Use Cases: `app/src/main/java/pe/brice/smsreplay/domain/usecase/`
-
----
-
-## Action Items
-
-### 개발 전제 조건
-
-#### 필수 설치 항목
-- [ ] Android Studio 최신 버전 (Hedgehog or later)
-- [ ] JDK 17 이상
-- [ ] Android SDK API 23+ (최소 타겟: API 23)
-- [ ] 테스트용 안드로이드 기기 또는 에뮬레이터
-
-#### 기술 스택 검토
-- [ ] Kotlin 기본 문법 및 Coroutines 숙지
-- [ ] Clean Architecture 개념 이해
-- [ ] Koin DI 기본 사용법 숙지
-- [ ] Jetpack Compose 또는 XML 기반 UI (선택사항)
-
----
-
-## Phase 1: 프로젝트 초기 설정 및 아키텍처
-
-### 목표
-멀티 모듈 프로젝트 구조를 생성하고 필수 라이브러리를 설정
-
-### 작업 목록
-- [ ] Android 프로젝트 생성 (Empty Activity)
-- [ ] 멀티 모듈 구조 설정
-  - [ ] `app` 모듈 (메인 앱)
-  - [ ] `smtp` 모듈 (SMTP 전송 기능)
-- [ ] Gradle 설정
-  - [ ] Koin 의존성 추가
-  - [ ] Jetpack Security (EncryptedSharedPreferences) 추가
-  - [ ] Room Database 추가
-  - [ ] Kotlin Coroutines & Flow 추가
-  - [ ] AndroidJavaMail 추가 (smtp 모듈)
-  - [ ] Material Design 3 추가
-- [ ] build.gradle.kts 설정
-  - [ ] 모듈간 의존성 설정
-  - [ ] ProGuard/R8 규칙 설정
-- [ ] 프로젝트 구조 생성
-  - [ ] app/src/main/java/com/app/smsreplay/
-    - [ ] data/
-    - [ ] domain/
-    - [ ] presentation/
-  - [ ] smtp/src/main/java/com/app/smtp/
-    - [ ] model/
-    - [ ] sender/
-    - [ ] template/
-
-### 코드 리뷰 체크리스트
-- [ ] 모든 모듈이 독립적으로 빌드되는가?
-- [ ] 의존성 버전 호환성 확인 (Kotlin, AndroidX, Koin)
-- [ ] 모듈간 의존성 방향이 올바른가? (app → smtp, 역방향 없음)
-- [ ] Clean Architecture 패키지 구조가 준비되었는가?
-- [ ] ProGuard 규칙이 필요한 라이브러리 포함하는가?
-
-### 완료 조건
-- 프로젝트가 에러 없이 빌드되고 실행 가능해야 함
-- 모든 모듈이 독립적으로 컴파일되어야 함
-
-**예상 소요 시간:** 1-2시간
-**난이도:** ⭐ (기초 설정)
-
----
-
-## Phase 2: 데이터 계층 기초 (Data Layer Foundation)
-
-### 목표
-데이터 저장소(DataStore, EncryptedSharedPreferences, Room)를 구현
-
-### 작업 목록
-- [ ] EncryptedSharedPreferences 구현
-  - [ ] `data/datastore/SecurePreferences.kt` 생성
-  - [ ] MasterKey 생성 (KeyGenParameterSpec)
-  - [ ] SMTP 자격 증명 암호화/복호화 메서드
-  - [ ] 테스트: 암호화/복호화 정상 동작 확인
-- [ ] DataStore 설정 (필터 설정용)
-  - [ ] `data/datastore/SettingsDataStore.kt` 생성
-  - [ ] Serializer 구현 (FilterSettings)
-  - [ ] 필터 데이터 클래스 정의
-    - [ ] senderNumber: String?
-    - [ ] bodyKeyword: String?
-- [ ] Room Database 구현
-  - [ ] `data/local/database/SmsDatabase.kt` 생성
-  - [ ] Entity: `PendingSmsEntity` 정의
-    - [ ] id, sender, body, timestamp, retryCount
-  - [ ] DAO: `PendingSmsDao` 생성
-    - [ ] insert, getAll, deleteOldest, deleteById
-  - [ ] Database @Database 설정 (version 1)
-- [ ] Data Models 정의
-  - [ ] `data/model/SmtpConfigData.kt`
-  - [ ] `data/model/FilterSettingsData.kt`
-  - [ ] `data/model/PendingSmsData.kt`
-
-### 코드 리뷰 체크리스트
-- [ ] EncryptedSharedPreferences가 실제로 암호화되는가? (로그로 평문 확인 불가)
-- [ ] MasterKey가 AndroidKeyStore에 안전하게 저장되는가?
-- [ ] Room Database migration 전략이 있는가?
-- [ ] DataStore 타입 안전성이 보장되는가? (ProtoBuf 또는 Kotlin serialization)
-- [ ] 모든 데이터 모델이 직렬화 가능한가?
-- [ ] Database 쿼리가 효율적인가? (index, query optimization)
-
-### 완료 조건
-- SMTP 비밀번호가 암호화되어 저장되어야 함
-- Room DB가 정상적으로 생성되어야 함
-- DataStore가 필터 설정을 저장/로드할 수 있어야 함
-- 단위 테스트 통과 (암호화, DB CRUD, DataStore)
-
-**예상 소요 시간:** 3-4시간
-**난이도:** ⭐⭐ (데이터 저장소 이해 필요)
-
----
-
-## Phase 3: SMTP 모듈 구현
-
-### 목표
-AndroidJavaMail을 활용하여 이메일 전송 기능과 HTML 템플릿 생성
-
-### 작업 목록
-- [ ] SMTP 모듈 의존성 설정
-  - [ ] AndroidJavaMail 라이브러리 추가
-  - [ ] Email DTO 모델 정의 (smtp/model/Email.kt)
-- [ ] HTML 이메일 템플릿 생성
-  - [ ] `smtp/template/EmailTemplateBuilder.kt` 구현
-  - [ ] HTML 디자인 구현
-    - [ ] 카드 형태 레이아웃 (CSS inline styles)
-    - [ ] 보낸사람 정보 상단 표시
-    - [ ] 말풍선 형태 본문 영역
-    - [ ] 수신 시간 하단 표시
-    - [ ] 반응형 디자인 (모바일/데스크톱)
-  - [ ] 템플릿 테스트 (다양한 SMS 내용으로 렌더링 확인)
-- [ ] SMTP Sender 구현
-  - [ ] `smtp/sender/MailSender.kt` 생성
-  - [ ] JavaMail Session 설정 (TLS/SSL)
-  - [ ] 이메일 전송 메서드 (sendEmail)
-  - [ ] 비동기 전송 지원 (Coroutines)
-  - [ ] Transport protocol exception handling
-- [ ] SMTP 모듈 테스트
-  - [ ] 단위 테스트: 템플릿 생성
-  - [ ] 통합 테스트: 실제 SMTP 서버로 전송 (테스트 계정 사용)
-
-### 코드 리뷰 체크리스트
-- [ ] HTML 템플릿이 모든 이메일 클라이언트에서 정상 렌더링되는가? (Gmail, Outlook, Apple Mail)
-- [ ] SMTP 연결이 안전한가? (TLS/SSL 사용)
-- [ ] 에러 핸들링이 충분한가? (네트워크, 인증, SMTP 서버 오류)
-- [ ] Coroutines를 올바르게 사용하는가? (Dispatchers.IO)
-- [ ] SMTP 자격 증명이 로그에 노출되지 않는가?
-- [ ] 첨부 파일 지원이 필요한 경우 고려되었는가?
-- [ ] 템플릿이 XSS 공격에 방어되는가? (HTML escaping)
-
-### 완료 조건
-- 실제 SMTP 서버로 이메일이 성공적으로 전송되어야 함
-- HTML 템플릿이 SMS 화면과 유사하게 렌더링되어야 함
-- 에러가 적절히 처리되어야 함
-
-**예상 소요 시간:** 4-5시간
-**난이도:** ⭐⭐⭐ (SMTP 프로토콜, HTML 템플릿)
-
----
-
-## Phase 4: 도메인 계층 (Domain Layer)
-
-### 목표
-Clean Architecture의 도메인 계층을 구현 (UseCase, Repository 인터페이스)
-
-### 작업 목록
-- [ ] Domain Models 정의
-  - [ ] `domain/model/SmsMessage.kt`
-    - [ ] sender: String
-    - [ ] body: String
-    - [ ] timestamp: Long
-  - [ ] `domain/model/EmailMessage.kt`
-  - [ ] `domain/model/SmtpConfig.kt`
-  - [ ] `domain/model/FilterSettings.kt`
-  - [ ] `domain/model/SendingResult.kt` (Success, Failure, Retry)
-- [ ] Repository Interfaces 정의
-  - [ ] `domain/repository/SmtpConfigRepository.kt`
-    - [ ] getConfig(): Flow<SmtpConfig>
-    - [ ] saveConfig(config: SmtpConfig)
-  - [ ] `domain/repository/FilterRepository.kt`
-    - [ ] getFilters(): Flow<FilterSettings>
-    - [ ] saveFilters(filters: FilterSettings)
-  - [ ] `domain/repository/SmsQueueRepository.kt`
-    - [ ] enqueue(sms: SmsMessage)
-    - [ ] getQueue(): Flow<List<SmsMessage>>
-    - [ ] remove(id: Long)
-  - [ ] `domain/repository/EmailSenderRepository.kt`
-    - [ ] sendEmail(email: EmailMessage): Result<SendingResult>
-- [ ] Use Cases 구현
-  - [ ] `domain/usecase/SendSmsAsEmailUseCase.kt`
-    - [ ] 필터 유효성 검사
-    - [ ] 이메일 생성 및 전송
-    - [ ] 실패 시 큐에 저장
-  - [ ] `domain/usecase/ProcessSmsQueueUseCase.kt`
-    - [ ] 네트워크 상태 확인
-    - [ ] 대기열 처리
-    - [ ] 재시도 로직 (3회, exponential backoff)
-  - [ ] `domain/usecase/ValidateSmtpConfigUseCase.kt`
-  - [ ] `domain/usecase/SaveFilterSettingsUseCase.kt`
-  - [ ] `domain/usecase/GetFilterSettingsUseCase.kt`
-- [ ] Domain Models Mapper
-  - [ ] Data → Domain 변환 (Extension functions)
-  - [ ] Domain → Data 변환
-
-### 코드 리뷰 체크리스트
-- [ ] Domain Model이 Data Layer에 의존하지 않는가? (순수 Kotlin)
-- [ ] UseCase가 단일 책임을 가지는가?
-- [ ] Repository 인터페이스가 구현 세부사항을 노출하지 않는가?
-- [ ] Flow를 올바르게 사용하는가? (비동기 데이터 스트림)
-- [ ] 예외 처리가 Result 타입으로 일관되게 처리되는가?
-- [ ] 도메인 로직이 UseCase에 캡슐화되어 있는가?
-
-### 완료 조건
-- 모든 UseCase가 단위 테스트 가능해야 함 (외부 의존성 없이)
-- Domain Model이 독립적으로 존재해야 함
-- Repository 인터페이스가 명확하게 정의되어야 함
-
-**예상 소요 시간:** 2-3시간
-**난이도:** ⭐⭐ (Clean Architecture 개념)
-
----
-
-## Phase 5: 데이터 계층 구현 (Repository Implementation)
-
-### 목표
-도메인 계층의 Repository 인터페이스를 구현
-
-### 작업 목록
-- [ ] SmtpConfigRepository 구현
-  - [ ] `data/repository/SmtpConfigRepositoryImpl.kt`
-  - [ ] EncryptedSharedPreferences 연동
-  - [ ] Domain Model ↔ Data Model 변환
-  - [ ] Flow로 설정 변경 emit
-- [ ] FilterRepository 구현
-  - [ ] `data/repository/FilterRepositoryImpl.kt`
-  - [ ] DataStore 연동
-  - [ ] Flow로 필터 변경 emit
-- [ ] SmsQueueRepository 구현
-  - [ ] `data/repository/SmsQueueRepositoryImpl.kt`
-  - [ ] Room DAO 연동
-  - [ ] 큐 크기 제한 로직 (최대 100개)
-  - [ ] 오래된 항목 자동 삭제
-- [ ] EmailSenderRepository 구현
-  - [ ] `data/repository/EmailSenderRepositoryImpl.kt`
-  - [ ] SMTP 모듈 연동
-  - [ ] 네트워크 에러 처리
-  - [ ] Result wrapper 반환
-- [ ] Dependency Injection 설정 (Koin)
-  - [ ] `di/RepositoryModule.kt` 생성
-  - [ ] Repository 바인딩
-  - [ ] Interface → Implementation 매핑
-
-### 코드 리뷰 체크리스트
-- [ ] Repository가 인터페이스를 올바르게 구현하는가?
-- [ ] Data Layer의 세부사항이 도메인으로 누출되지 않는가?
-- [ ] 에러 처리가 적절한가? (네트워크, DB, 암호화)
-- [ ] Flow가 메모리 누수 없이 정상적으로 동작하는가?
-- [ ] Coroutines 디스패처가 올바른가? (IO 디스패처 사용)
-- [ ] 테스트 가능한가? (의존성 주입이 용이한가?)
-- [ ] 큐 제한 로직이 정확하게 동작하는가? (100개 초과 시 오래된 것 삭제)
-
-### 완료 조건
-- 모든 Repository가 단위 테스트 통과
-- Koin DI가 정상적으로 동작
-- Data Flow가 동작하는 것을 확인 (데이터 저장/로드)
-
-**예상 소요 시간:** 3-4시간
-**난이도:** ⭐⭐⭐ (Repository 패턴, 데이터 매핑)
-
----
-
-## Phase 6: SMS 수신 및 Foreground Service
-
-### 목표
-SMS BroadcastReceiver와 Foreground Service를 구현
-
-### 작업 목록
-- [ ] BroadcastReceiver 구현
-  - [ ] `receiver/SmsReceiver.kt` 생성
-  - [ ] SMS_RECEIVED 브로드캐스트 수신
-  - [ ] SMS 데이터 파싱 (_pdu_)
-  - [ ] 필터 유효성 검사
-  - [ ] UseCase 호출 (SendSmsAsEmailUseCase)
-- [ ] Foreground Service 구현
-  - [ ] `service/SmsForegroundService.kt` 생성
-  - [ ] Notification 생성
-    - [ ] 채널 생성 ("SMS Service")
-    - [ ] 알림 내용: "SMS 수신 대기중입니다"
-    - [ ] 알림 탭 시 설정 화면으로 이동 (PendingIntent)
-  - [ ] Service 생명주기 관리
-  - [ ] Service start/stop 로직
-- [ ] Service Manager 구현
-  - [ ] `service/ServiceManager.kt` 생성
-  - [ ] 백그라운드 제한 확인
-  - [ ] 배터리 최적화 무시 요청
-  - [ ] 권한 요청 (POST_NOTIFICATIONS)
-- [ ] Manifest 설정
-  - [ ] RECEIVE_SMS, READ_SMS 권한 선언
-  - [ ] FOREGROUND_SERVICE 권한
-  - [ ] RECEIVER SMS 권한
-  - [ ] Service 등록
-  - [ ] BroadcastReceiver 등록
-- [ ] 권한 요청 구현
-  - [ ] 런타임 권한 요청 로직
-  - [ ] 권한 거부 시 안내 및 설정 화면 이동
-  - [ ] Android 13+ POST_NOTIFICATIONS 권한 처리
-
-### 코드 리뷰 체크리스트
-- [ ] BroadcastReceiver가 SMS를 올바르게 수신하는가? (다양한 기기 테스트)
-- [ ] Foreground Service가 백그라운드에서 실행되는가? (Doze 모드 테스트)
-- [ ] 알림이 항상 표시되는가?
-- [ ] 배터리 최적화 무시가 정상적으로 동작하는가?
-- [ ] 권한 요청이 모든 Android 버전에서 동작하는가? (API 23+)
-- [ ] SMS 파싱이 멀티파이 메시지를 지원하는가?
-- [ ] Service가 메모리 누수 없이 정상적으로 종료되는가?
-- [ ] BroadcastReceiver의 수신 시간 제한을 준수하는가? (10초 이내)
-
-### 완료 조건
-- 실제 SMS를 수신하여 이메일이 전송되어야 함
-- 앱이 백그라운드에서도 SMS를 수신해야 함
-- Foreground Service 알림이 상시 표시되어야 함
-- 모든 권한이 정상적으로 요청/부여되어야 함
-
-**예상 소요 시간:** 4-5시간
-**난이도:** ⭐⭐⭐⭐ (Service, Broadcast, 권한 처리)
-
----
-
-## Phase 7: 에러 핸들링 및 재시도 로직
-
-### 목표
-SMTP 전송 실패 시 재시도 로직과 오프라인 큐 처리를 구현
-
-### 작업 목록
-- [ ] 재시도 로직 구현
-  - [ ] Exponential Backoff 전략
-    - [ ] 1차 시도: 즉시
-    - [ ] 2차 시도: 1초 후
-    - [ ] 3차 시도: 5초 후
-    - [ ] 최종: 10초 후
-  - [ ] `util/RetryHelper.kt` 생성
-  - [ ] suspend 함수로 재시도 로직 구현
-- [ ] 네트워크 모니터링
-  - [ ] `util/NetworkMonitor.kt` 생성
-  - [ ] ConnectivityManager.NetworkCallback 구현
-  - [ ] 네트워크 상태 Flow로 emit
-- [ ] 큐 프로세서 구현
-  - [ ] `service/QueueProcessor.kt` 생성
-  - [ ] WorkManager 또는 Coroutines 주기적 실행
-  - [ ] 네트워크 복구 시 큐 처리
-  - [ ] 재시도 횟수 추적 (최대 3회)
-  - [ ] 실패 기록 저장
-- [ ] 에러 로깅
-  - [ ] Timber 또는 Logcat 사용
-  - [ ] 에러 타입별 로그 분류
-  - [ ] 사용자에게 에러 메시지 표시 (Notification/Toast)
-- [ ] 실패 기록 저장
-  - [ ] Room Table: FailedEmailEntity
-  - [ ] 실패 사유, 타임스탬프 저장
-  - [ ] 실패 기록 조회 화면 (선택사항)
-
-### 코드 리뷰 체크리스트
-- [ ] 재시도 간격이 올바른가? (1s, 5s, 10s)
-- [ ] 네트워크 복구 시 큐가 즉시 처리되는가?
-- [ ] 큐 크기 제한이 동작하는가? (100개)
-- [ ] 재시도 횟수가 정확히 카운트되는가?
-- [ ] 메모리 누수가 없는가? (Flow, Coroutine 취소)
-- [ ] 에러 로그가 유용한 정보를 포함하는가?
-- [ ] 사용자 경험이 고려되는가? (진행 상황 표시)
-- [ ] 배터리 소모가 최적화되는가? (네트워크 요청 횟수)
-
-### 완료 조건
-- 네트워크 불량 시 SMS가 큐에 저장되어야 함
-- 네트워크 복구 시 큐가 순차적으로 처리되어야 함
-- 3회 재시도 후 실패 시 기록이 저장되어야 함
-- 배터리 소모가 적당해야 함
-
-**예상 소요 시간:** 3-4시간
-**난이도:** ⭐⭐⭐ (비동기 처리, 에러 핸들링)
-
----
-
-## Phase 8: 프레젠테이션 계층 (UI/Settings)
-
-### 목표
-SMTP 설정 및 필터 설정 화면을 구현
-
-### 작업 목록
-- [ ] UI 프레임워크 선택 (Compose 또는 XML)
-- [ ] SMTP 설정 화면
-  - [ ] `presentation/smtp/SmtpSettingScreen.kt`
-  - [ ] 입력 필드
-    - [ ] SMTP 서버 주소 (TextField)
-    - [ ] 포트 (NumberTextField, 기본값 587)
-    - [ ] SMTP ID (EmailTextField)
-    - [ ] SMTP Password (PasswordTextField, 가려짐)
-  - [ ] 저장 버튼
-  - [ ] 유효성 검사 (빈 필드 체크)
-  - [ ] ViewModel 구현
-    - [ ] `SmtpSettingViewModel.kt`
-    - [ ] StateFlow로 UI 상태 관리
-    - [ ] 저장 로직 (UseCase 호출)
-- [ ] 필터 설정 화면
-  - [ ] `presentation/filter/FilterSettingScreen.kt`
-  - [ ] 입력 필드
-    - [ ] 발신자 번호 (TextField, 선택사항)
-    - [ ] 본문 키워드 (TextField, 선택사항)
-  - [ ] AND 조건 안내 텍스트
-  - [ ] 저장 버튼
-  - [ ] ViewModel 구현
-    - [ ] `FilterSettingViewModel.kt`
-- [ ] 메인 화면
-  - [ ] `presentation/main/MainScreen.kt`
-  - [ ] 서비스 시작/정지 버튼
-  - [ ] 현재 설정 상태 표시
-  - [ ] 대기열 크기 표시
-  - [ ] 최근 전송 내역 (선택사항)
-- [ ] DI 설정
-  - [ ] `di/PresentationModule.kt`
-  - [ ] ViewModel 바인딩
-  - [ ] UseCase 주입
-- [ ] Material Design 3 적용
-  - [ ] 테마 설정
-  - [ ] 색상, 타이포그래피
-  - [ ] 깔끔하고 직관적인 디자인 (은행 앱 스타일)
-
-### 코드 리뷰 체크리스트
-- [ ] UI가 Material Design 3 가이드라인을 따르는가?
-- [ ] 입력 유효성 검사가 충분한가?
-- [ ] ViewModel이 UI 로직과 비즈니스 로직을 분리하는가?
-- [ ] StateFlow/SharedFlow가 올바르게 사용되는가?
-- [ ] 화면 회전이 상태를 유지하는가?
-- [ ] 사용자 입력이 명확한 피드백을 제공하는가? (loading, success, error)
-- [ ] 암호 입력 필드가 가려져 있는가? (toggle 가능)
-- [ ] 설정 화면이 직관적인가? (은행 앱 수준의 UX)
-
-### 완료 조건
-- SMTP 설정이 저장되어야 함
-- 필터 설정이 저장되어야 함
-- 서비스가 시작/정지되어야 함
-- UI가 깔끔하고 직관적이어야 함
-
-**예상 소요 시간:** 5-6시간
-**난이도:** ⭐⭐⭐ (UI/UX, ViewModel)
-
----
-
-## Phase 9: 통합 및 종단 간 테스트
-
-### 목표
-모든 컴포넌트를 통합하고 실제 시나리오로 테스트
-
-### 작업 목록
-- [ ] 종단 간 시나리오 테스트
-  - [ ] 시나리오 1: SMS 수신 → 즉시 이메일 전송
-  - [ ] 시나리오 2: SMS 수신 → 필터링 → 전송 안 함
-  - [ ] 시나리오 3: SMS 수신 → 네트워크 없음 → 큐 저장 → 복구 후 전송
-  - [ ] 시나리오 4: SMTP 실패 → 재시도 → 성공
-  - [ ] 시나리오 5: SMTP 3회 실패 → 실패 기록
-- [ ] 에러 시나리오 테스트
-  - [ ] 잘못된 SMTP 자격 증명
-  - [ ] 네트워크 연결 끊김
-  - [ ] SMS 권한 거부
-  - [ ] 배터리 최적화 활성화
-  - [ ] Doze 모드
-- [ ] 성능 테스트
-  - [ ] 대용량 SMS 수신 (100개/분)
-  - [ ] 메모리 사용량 모니터링
-  - [ ] 배터리 소모 측정
-  - [ ] 큐 처리 속도
-- [ ] 호환성 테스트
-  - [ ] Android 6.0 (API 23)
-  - [ ] Android 13 (API 33) - POST_NOTIFICATIONS
-  - [ ] Android 14 (API 34)
-  - [ ] 다양한 제조사 (Samsung, Pixel, Xiaomi 등)
-- [ ] 보안 감사
-  - [ ] SMTP 비밀번호가 암호화되는가?
-  - [ ] 로그에 민감 정보가 노출되지 않는가?
-  - [ ] 권한이 최소 권한 원칙을 따르는가?
-- [ ] 사용자 가이드 작성
-  - [ ] 백그라운드 제한 해제 방법
-  - [ ] 배터리 최적화 끄는 방법
-  - [ ] 권한 부여 방법
-
-### 코드 리뷰 체크리스트
-- [ ] 모든 시나리오가 정상 동작하는가?
-- [ ] 에러가 사용자에게 명확하게 표시되는가?
-- [ ] 메모리 누수가 없는가? (LeakCanary로 확인)
-- [ ] ANR이 발생하지 않는가?
-- [ ] 보안 요구사항이 충족되는가?
-- [ ] 다양한 Android 버전에서 동작하는가?
-- [ ] 배터리 소모가 적절한가? (< 5% / 일일)
-
-### 완료 조건
-- 모든 E2E 테스트 시나리오 통과
-- 메모리 누수 없음
-- 주요 Android 버전에서 정상 동작
-- 보안 감사 통과
-
-**예상 소요 시간:** 4-5시간
-**난이도:** ⭐⭐⭐⭐ (통합, 다양한 시나리오)
-
----
-
-## Phase 10: 최종 폴리시 및 배포 준비
-
-### 목표
-최종 품질 검사, 문서화, 배포 준비
-
-### 작업 목록
-- [ ] 코드 품질 개선
-  - [ ] Lint 경고 해결
-  - [ ] Unused code 제거
-  - [ ] 코드 포맷팅 (ktlint)
-  - [ ] 주석 추가 (복잡한 로직 설명)
-- [ ] 성능 최적화
-  - [ ] 앱 시작 시간 단축
-  - [ ] APK 크기 최적화 (ProGuard/R8)
-  - [ ] 네트워크 요청 최적화
-  - [ ] 배터리 최적화 (WorkManager 사용)
-- [ ] 문서화
-  - [ ] README.md 작성
-    - [ ] 앱 기능 소개
-    - [ ] 설정 방법
-    - [ ] 백그라운드 제한 해제 가이드
-  - [ ] CHANGELOG.md 작성
-  - [ ] 코드 문서 (KDoc)
-- [ ] APK 빌드
-  - [ ] Release APK 빌드
-  - [ ] 서명 설정
-  - [ ] 버전 관리 (versionCode, versionName)
-- [ ] 최종 테스트
-  - [ ] Production-like 환경 테스트
-  - [ ] Beta 테스터 모집 (선택사항)
-  - [ ] 사용자 피드백 수집 (선택사항)
-- [ ] 배포 (선택사항)
-  - [ ] Google Play Store 준비
-    - [ ] 스토어 등록 정보
-    - [ ] 스크린샷
-    - [ ] 개인정보처리방침
-  - [ ] APK 직접 배포
-
-### 코드 리뷰 체크리스트
-- [ ] Lint 경고가 없는가?
-- [ ] 모든 테스트가 통과하는가?
-- [ ] 문서가 충분한가?
-- [ ] 앱이 릴리즈 모드로 정상 빌드되는가?
-- [ ] 서명이 올바르게 설정되는가?
-- [ ] 버전 번호가 올바른가?
-
-### 완료 조건
-- Release APK가 정상적으로 빌드되어야 함
-- 모든 문서가 작성되어야 함
-- 최종 테스트 통과
-- 배포 준비 완료
-
-**예상 소요 시간:** 3-4시간
-**난이도:** ⭐⭐ (빌드, 문서화)
-
----
-
-## 코드 리뷰 프로세스
-
-### 각 Phase 완료 후 수행할 절차
-
-1. **자가 검토 (Self-Review)**
-   - [ ] 해당 Phase의 모든 작업 완료 확인
-   - [ ] 코드 리뷰 체크리스트 항목 점검
-   - [ ] 단위 테스트 실행 및 통과 확인
-   - [ ] Lint/Static Analysis 실행
-
-2. **동작 검증 (Functional Testing)**
-   - [ ] 해당 Phase의 기능이 정상 동작하는지 확인
-   - [ ] 에러 시나리오 테스트
-   - [ ] 로그 확인 (예상치 못한 에러 없는지)
-
-3. **코드 품질 검토 (Code Quality)**
-   - [ ] 코드가 Clean Architecture를 준수하는가?
-   - [ ] Naming convention이 일관되는가?
-   - [ ] 중복 코드가 없는가?
-   - [ ] 주석이 필요한 곳에 있는가?
-
-4. **승인 및 다음 Phase 진행**
-   - [ ] 모든 체크리스트 항목이 통과되면 다음 Phase로 진행
-   - [ ] 미통과 항목이 있으면 수정 후 재검토
-
-### 일반적인 코드 리뷰 원칙
-
-- **각 Phase는 독립적으로 검증 가능해야 함**
-- **다음 Phase로 넘어가기 전에 현재 Phase를 완전히 완료해야 함**
-- **문제가 발견되면 즉시 수정하고 재검토**
-- **모든 테스트는 단위 테스트 + 통합 테스트를 포함해야 함**
-
----
-
-## 총 예상 개발 시간
-
-- **Phase 1:** 1-2시간
-- **Phase 2:** 3-4시간
-- **Phase 3:** 4-5시간
-- **Phase 4:** 2-3시간
-- **Phase 5:** 3-4시간
-- **Phase 6:** 4-5시간
-- **Phase 7:** 3-4시간
-- **Phase 8:** 5-6시간
-- **Phase 9:** 4-5시간
-- **Phase 10:** 3-4시간
-
-**총 예상 시간:** 32-42시간 (약 4-5일 집중 개발)
-
----
-
-## 개발 참고 자료
-
-### 공식 문서
-- [Android Developer Guide](https://developer.android.com/guide)
-- [Koin DI Documentation](https://insert-koin.io/docs/)
-- [Room Database](https://developer.android.com/training/data-storage/room)
-- [Jetpack Security](https://developer.android.com/topic/security/cryptography)
-- [AndroidJavaMail](https://github.com/orangestar/android-javamail)
-
-### 샘플 프로젝트
-- [Android Architecture Blueprints](https://github.com/android/architecture-samples)
-- [Koin Android Sample](https://github.com/InsertKoinIO/koin-samples)
-
-### 테스트 도구
-- [JUnit](https://junit.org/junit5/)
-- [Mockk](https://mockk.io/)
-- [Robolectric](https://robolectric.org/)
-- [Espresso](https://developer.android.com/training/testing/espresso)
 ---
 
 ## 📌 빠른 참조 (Quick Reference)
@@ -1549,14 +978,14 @@ SMTP 설정 및 필터 설정 화면을 구현
 - `gradle/libs.versions.toml` - 버전 관리
 
 #### Data Layer Files
-- `app/src/main/java/pe/brice/smsreplay/data/model/` - Data Models (3개)
+- `app/src/main/java/pe/brice/smsreplay/data/model/` - Data Models
 - `app/src/main/java/pe/brice/smsreplay/data/datastore/` - SecurePreferences, DataStore
 - `app/src/main/java/pe/brice/smsreplay/data/local/` - Room Database
 
 #### Domain Layer Files
-- `app/src/main/java/pe/brice/smsreplay/domain/model/` - Domain Models (5개)
-- `app/src/main/java/pe/brice/smsreplay/domain/repository/` - Repository Interfaces (4개)
-- `app/src/main/java/pe/brice/smsreplay/domain/usecase/` - Use Cases (5개)
+- `app/src/main/java/pe/brice/smsreplay/domain/model/` - Domain Models
+- `app/src/main/java/pe/brice/smsreplay/domain/repository/` - Repository Interfaces
+- `app/src/main/java/pe/brice/smsreplay/domain/usecase/` - Use Cases
 
 #### SMTP Module Files
 - `smtp/src/main/java/pe/brice/smtp/model/` - Email DTO
@@ -1581,51 +1010,4 @@ SMTP 설정 및 필터 설정 화면을 구현
 - Key Storage: AndroidKeyStore
 - Password Storage: EncryptedSharedPreferences
 
-### 다음 세션에서 바로 시작할 작업
-
-**Phase 5: 데이터 계층 구현 (Repository Implementation)**
-
-1. SmtpConfigRepositoryImpl
-   - Location: `app/src/main/java/pe/brice/smsreplay/data/repository/`
-   - Depends on: SecurePreferencesManager
-   - Tasks: Domain ↔ Data mapper, Flow conversion
-
-2. FilterRepositoryImpl
-   - Location: `app/src/main/java/pe/brice/smsreplay/data/repository/`
-   - Depends on: FilterSettingsDataStore
-   - Tasks: Domain ↔ Data mapper, Flow conversion
-
-3. SmsQueueRepositoryImpl
-   - Location: `app/src/main/java/pe/brice/smsreplay/data/repository/`
-   - Depends on: PendingSmsDao, SmsDatabase
-   - Tasks: Entity ↔ Domain mapper, Queue management
-
-4. EmailSenderRepositoryImpl
-   - Location: `app/src/main/java/pe/brice/smsreplay/data/repository/`
-   - Depends on: MailSender (SMTP module)
-   - Tasks: Email message creation, Result mapping
-
-5. Koin DI Module
-   - Location: `app/src/main/java/pe/brice/smsreplay/presentation/di/RepositoryModule.kt`
-   - Tasks: Bind interfaces to implementations
-
 ---
-
-## 💡 팁 (Tips)
-
-### 디버깅
-- Logcat으로 Room 쿼리 확인: `adb logcat | grep Room`
-- EncryptedSharedPreferences 내용 확인 불가 (보안상)
-- HTML 템플릿 미리보기: `TemplatePreview.getSampleTemplate()`
-
-### 테스트
-- SMTP 연결 테스트: `MailSender.testConnection()`
-- 필터 매칭 테스트: `FilterSettings.matches(sender, body)`
-- 큐 관리 테스트: `PendingSmsDao.insertWithQueueManagement()`
-
-### 주의 사항
-- SMTP 비밀번호는 절대 로그에 출력하지 말 것
-- Room migration은 schema 폴더 확인 후 진행
-- Koin module 시작 시 반드시 `startKoin()` 호출
-- Foreground Service는 반드시 알림 표시되어야 함
-

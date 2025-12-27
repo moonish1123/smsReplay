@@ -13,7 +13,8 @@ object EmailTemplateBuilder {
     fun buildSmsTemplate(
         sender: String,
         body: String,
-        timestamp: String
+        timestamp: String,
+        subject: String
     ): String {
         return """
             <!DOCTYPE html>
@@ -112,6 +113,33 @@ object EmailTemplateBuilder {
                         overflow-wrap: break-word;
                     }
 
+                    /* Meta Info */
+                    .meta-card {
+                        border: 1px solid #e6e6e6;
+                        border-radius: 12px;
+                        padding: 12px 14px;
+                        margin-bottom: 16px;
+                        background-color: #fafafa;
+                    }
+
+                    .meta-row {
+                        display: flex;
+                        gap: 10px;
+                        font-size: 14px;
+                        color: #555555;
+                        margin-bottom: 6px;
+                    }
+
+                    .meta-row:last-child {
+                        margin-bottom: 0;
+                    }
+
+                    .meta-label {
+                        min-width: 70px;
+                        font-weight: 600;
+                        color: #333333;
+                    }
+
                     .message-bubble::before {
                         content: '';
                         position: absolute;
@@ -180,6 +208,23 @@ object EmailTemplateBuilder {
                             </div>
 
                             <!-- Message Bubble -->
+                            <div class="meta-card">
+                                <div class="meta-row">
+                                    <div class="meta-label">From</div>
+                                    <div>${escapeHtml(sender)}</div>
+                                </div>
+                                <div class="meta-row">
+                                    <div class="meta-label">Subject</div>
+                                    <div>${escapeHtml(subject)}</div>
+                                </div>
+                                <div class="meta-row">
+                                    <div class="meta-label">Date</div>
+                                    <div>$timestamp</div>
+                                </div>
+                                <div class="meta-row">
+                                    <div class="meta-label">Body</div>
+                                </div>
+                            </div>
                             <div class="message-bubble">
                                 <div class="message-text">${escapeHtml(body)}</div>
                             </div>
@@ -217,10 +262,15 @@ object EmailTemplateBuilder {
     fun buildTextTemplate(
         sender: String,
         body: String,
-        timestamp: String
+        timestamp: String,
+        subject: String
     ): String {
         return """
-            SMS from $sender ($timestamp)
+            From: $sender
+            Subject: $subject
+            Date: $timestamp
+
+            Body:
 
             $body
 

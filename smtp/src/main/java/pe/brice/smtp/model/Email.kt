@@ -26,8 +26,11 @@ data class Email(
             val formattedTime = formatTimestamp(timestamp)
             val subject = "$sender ($formattedTime)"
 
+            // From format: "01012345678 <email@domain.com>"
+            val fromAddress = "\"$sender\" <$fromEmail>"
+
             return Email(
-                from = fromEmail,
+                from = fromAddress,
                 to = toEmail,
                 subject = subject,
                 htmlContent = htmlTemplate
@@ -43,21 +46,36 @@ data class Email(
     /**
      * Validate email fields
      * Supports multiple recipients separated by comma or semicolon
+     * Supports "Name <email>" format for sender
      */
     fun isValid(): Boolean {
         return from.isNotBlank() &&
                 to.isNotBlank() &&
                 subject.isNotBlank() &&
                 htmlContent.isNotBlank() &&
-                isValidEmail(from) &&
+                isValidFromEmail(from) &&
                 areRecipientEmailsValid()
     }
 
     /**
      * Validate sender email
+     * Supports both "email@domain.com" and "Name <email@domain.com>" formats
      */
-    private fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+    private fun isValidFromEmail(email: String): Boolean {
+        val trimmed = email.trim()
+
+        // Extract email from "Name <email@domain.com>" format
+        val emailOnly = when {
+            trimmed.contains("<") && trimmed.contains(">") -> {
+                // Extract part between < and >
+                val start = trimmed.indexOf("<")
+                val end = trimmed.indexOf(">")
+                if (start < end) trimmed.substring(start + 1, end).trim() else trimmed
+            }
+            else -> trimmed
+        }
+
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(emailOnly).matches()
     }
 
     /**

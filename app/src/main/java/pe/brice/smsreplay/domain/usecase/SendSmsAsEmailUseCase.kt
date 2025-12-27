@@ -56,16 +56,18 @@ class SendSmsAsEmailUseCase(
         }
 
         // 4. Create email
+        val subject = "[FW SMS] ${sms.sender} (${sms.getFormattedTime()})"
         val htmlTemplate = EmailTemplateBuilder.buildSmsTemplate(
             sender = sms.sender,
             body = sms.body,
-            timestamp = sms.getFormattedTime()
+            timestamp = sms.getFormattedTime(),
+            subject = subject
         )
 
         val emailMessage = EmailMessage(
             from = "", // Will be set from SMTP config
             to = "",   // Will be set from SMTP config
-            subject = "[FW SMS] ${sms.sender} (${sms.getFormattedTime()})",
+            subject = subject,
             htmlContent = htmlTemplate,
             timestamp = sms.timestamp
         )

@@ -13,7 +13,8 @@ object TemplatePreview {
         return EmailTemplateBuilder.buildSmsTemplate(
             sender = "01012345678",
             body = "안녕하세요! 인증 번호는 [123456]입니다.\n\n이 인증 번호를 입력하여 본인 확인을 완료해 주세요.",
-            timestamp = "2024-12-26 14:30"
+            timestamp = "2024-12-26 14:30",
+            subject = "[FW SMS] 01012345678 (2024-12-26 14:30)"
         )
     }
 
