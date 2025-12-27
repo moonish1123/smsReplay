@@ -13,19 +13,15 @@ object EmailTemplateBuilder {
      * @param body SMS message body
      * @param timestamp Formatted timestamp string
      * @param subject Email subject (sender + timestamp)
-     * @param isAd Optional: true if this is an ad message (adds [광고] suffix)
+     * @param showAd Optional: for future monetization (Google AdSense)
      */
     fun buildSmsTemplate(
         sender: String,
         body: String,
         timestamp: String,
         subject: String,
-        isAd: Boolean = false
+        showAd: Boolean = false
     ): String {
-        // Add [광고] suffix if it's an ad
-        val adSuffix = if (isAd) " [광고]" else ""
-        val displaySender = sender + adSuffix
-
         return """
             <!DOCTYPE html>
             <html lang="ko">
@@ -98,15 +94,17 @@ object EmailTemplateBuilder {
                         color: #999999;
                     }
 
-                    .ad-badge {
-                        display: inline-block;
-                        background-color: #ff6b6b;
-                        color: #ffffff;
-                        font-size: 11px;
-                        font-weight: 600;
-                        padding: 2px 8px;
+                    /* Ad Space Placeholder - for future Google AdSense integration */
+                    .ad-space {
+                        margin-top: 20px;
+                        padding: 16px;
+                        background-color: #f9f9f9;
+                        border: 1px dashed #cccccc;
                         border-radius: 4px;
-                        margin-left: 6px;
+                        text-align: center;
+                        font-size: 11px;
+                        color: #999999;
+                        ${if (showAd) "" else "display: none;"}
                     }
 
                     @media only screen and (max-width: 600px) {
@@ -128,7 +126,7 @@ object EmailTemplateBuilder {
                     <div class="email-body">
                         <div class="info-row">
                             <span class="info-label">보낸사람:</span>
-                            <span class="info-value">${escapeHtml(displaySender)}</span>
+                            <span class="info-value">${escapeHtml(sender)}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">제목:</span>
@@ -140,6 +138,12 @@ object EmailTemplateBuilder {
                         </div>
                         <hr class="divider">
                         <div class="message-content">${escapeHtml(body)}</div>
+
+                        <!-- Ad Space Placeholder - for future monetization -->
+                        <div class="ad-space">
+                            광고 영역 (추후 유료화 시 Google AdSense 적용 예정)
+                        </div>
+
                         <div class="footer">
                             SMS Forwarding Service
                         </div>
