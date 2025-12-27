@@ -9,232 +9,139 @@ object EmailTemplateBuilder {
     /**
      * Generate HTML email template from SMS data
      * Design: Card-style layout similar to phone SMS screens
+     * @param sender SMS sender phone number
+     * @param body SMS message body
+     * @param timestamp Formatted timestamp string
+     * @param subject Email subject (sender + timestamp)
+     * @param isAd Optional: true if this is an ad message (adds [광고] suffix)
      */
     fun buildSmsTemplate(
         sender: String,
         body: String,
         timestamp: String,
-        subject: String
+        subject: String,
+        isAd: Boolean = false
     ): String {
+        // Add [광고] suffix if it's an ad
+        val adSuffix = if (isAd) " [광고]" else ""
+        val displaySender = sender + adSuffix
+
         return """
             <!DOCTYPE html>
             <html lang="ko">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>SMS from $sender</title>
                 <style>
-                    /* Reset and Base Styles */
-                    * {
-                        margin: 0;
-                        padding: 0;
-                        box-sizing: border-box;
-                    }
-
                     body {
                         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
                         background-color: #f5f5f5;
                         padding: 20px;
                         line-height: 1.6;
+                        margin: 0;
                     }
 
-                    /* Container */
                     .email-container {
                         max-width: 600px;
                         margin: 0 auto;
                         background-color: #ffffff;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                        overflow: hidden;
                     }
 
-                    /* Card Container */
-                    .sms-card {
-                        background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
-                        border-radius: 20px;
-                        padding: 2px;
-                        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-                        margin-bottom: 20px;
+                    .email-header {
+                        background-color: #667eea;
+                        padding: 20px 24px;
+                        color: #ffffff;
                     }
 
-                    /* Card Inner */
-                    .card-inner {
-                        background-color: #ffffff;
-                        border-radius: 18px;
+                    .email-body {
                         padding: 24px;
                     }
 
-                    /* Header Section */
-                    .card-header {
-                        display: flex;
-                        align-items: center;
-                        margin-bottom: 20px;
-                        padding-bottom: 16px;
-                        border-bottom: 1px solid #f0f0f0;
-                    }
-
-                    /* Avatar */
-                    .avatar {
-                        width: 48px;
-                        height: 48px;
-                        border-radius: 50%%;
-                        background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 20px;
-                        font-weight: bold;
-                        color: #ffffff;
-                        margin-right: 16px;
-                        flex-shrink: 0;
-                    }
-
-                    /* Sender Info */
-                    .sender-info {
-                        flex: 1;
-                    }
-
-                    .sender-name {
-                        font-size: 18px;
-                        font-weight: 600;
-                        color: #1a1a1a;
-                        margin-bottom: 4px;
-                    }
-
-                    .timestamp {
+                    .info-row {
+                        margin-bottom: 12px;
                         font-size: 14px;
-                        color: #999999;
                     }
 
-                    /* Message Bubble */
-                    .message-bubble {
-                        background-color: #f0f0f0;
-                        border-radius: 18px;
-                        padding: 16px 20px;
-                        position: relative;
-                        word-wrap: break-word;
-                        overflow-wrap: break-word;
-                    }
-
-                    /* Meta Info */
-                    .meta-card {
-                        border: 1px solid #e6e6e6;
-                        border-radius: 12px;
-                        padding: 12px 14px;
-                        margin-bottom: 16px;
-                        background-color: #fafafa;
-                    }
-
-                    .meta-row {
-                        display: flex;
-                        gap: 10px;
-                        font-size: 14px;
-                        color: #555555;
-                        margin-bottom: 6px;
-                    }
-
-                    .meta-row:last-child {
-                        margin-bottom: 0;
-                    }
-
-                    .meta-label {
-                        min-width: 70px;
+                    .info-label {
                         font-weight: 600;
+                        color: #667eea;
+                        margin-right: 8px;
+                    }
+
+                    .info-value {
                         color: #333333;
                     }
 
-                    .message-bubble::before {
-                        content: '';
-                        position: absolute;
-                        top: 0;
-                        left: -8px;
-                        width: 0;
-                        height: 0;
-                        border-top: 12px solid #f0f0f0;
-                        border-left: 12px solid transparent;
+                    .divider {
+                        border: none;
+                        border-top: 1px solid #e6e6e6;
+                        margin: 20px 0;
                     }
 
-                    .message-text {
-                        font-size: 16px;
-                        color: #1a1a1a;
+                    .message-content {
                         white-space: pre-wrap;
                         word-break: break-word;
-                        line-height: 1.5;
+                        color: #1a1a1a;
+                        font-size: 15px;
+                        line-height: 1.6;
                     }
 
-                    /* Footer */
-                    .card-footer {
-                        margin-top: 16px;
+                    .footer {
+                        margin-top: 20px;
                         padding-top: 16px;
-                        border-top: 1px solid #f0f0f0;
+                        border-top: 1px solid #e6e6e6;
                         text-align: center;
-                    }
-
-                    .footer-text {
                         font-size: 12px;
                         color: #999999;
                     }
 
-                    /* Responsive Design */
+                    .ad-badge {
+                        display: inline-block;
+                        background-color: #ff6b6b;
+                        color: #ffffff;
+                        font-size: 11px;
+                        font-weight: 600;
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        margin-left: 6px;
+                    }
+
                     @media only screen and (max-width: 600px) {
                         body {
                             padding: 10px;
                         }
 
-                        .card-inner {
-                            padding: 20px;
-                        }
-
-                        .sender-name {
-                            font-size: 16px;
-                        }
-
-                        .message-text {
-                            font-size: 15px;
+                        .email-header, .email-body {
+                            padding: 16px;
                         }
                     }
                 </style>
             </head>
             <body>
                 <div class="email-container">
-                    <div class="sms-card">
-                        <div class="card-inner">
-                            <!-- Header: Avatar and Sender Info -->
-                            <div class="card-header">
-                                <div class="avatar">
-                                    ${escapeHtml(sender.first().uppercaseChar().toString())}
-                                </div>
-                                <div class="sender-info">
-                                    <div class="sender-name">${escapeHtml(sender)}</div>
-                                    <div class="timestamp">$timestamp</div>
-                                </div>
-                            </div>
-
-                            <!-- Message Bubble -->
-                            <div class="meta-card">
-                                <div class="meta-row">
-                                    <div class="meta-label">From</div>
-                                    <div>${escapeHtml(sender)}</div>
-                                </div>
-                                <div class="meta-row">
-                                    <div class="meta-label">Subject</div>
-                                    <div>${escapeHtml(subject)}</div>
-                                </div>
-                                <div class="meta-row">
-                                    <div class="meta-label">Date</div>
-                                    <div>$timestamp</div>
-                                </div>
-                                <div class="meta-row">
-                                    <div class="meta-label">Body</div>
-                                </div>
-                            </div>
-                            <div class="message-bubble">
-                                <div class="message-text">${escapeHtml(body)}</div>
-                            </div>
-
-                            <!-- Footer -->
-                            <div class="card-footer">
-                                <div class="footer-text">
-                                    SMS Forwarding Service
-                                </div>
-                            </div>
+                    <div class="email-header">
+                        <h2 style="margin: 0; font-size: 20px;">SMS 수신 알림</h2>
+                    </div>
+                    <div class="email-body">
+                        <div class="info-row">
+                            <span class="info-label">보낸사람:</span>
+                            <span class="info-value">${escapeHtml(displaySender)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">제목:</span>
+                            <span class="info-value">${escapeHtml(subject)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">일시:</span>
+                            <span class="info-value">$timestamp</span>
+                        </div>
+                        <hr class="divider">
+                        <div class="message-content">${escapeHtml(body)}</div>
+                        <div class="footer">
+                            SMS Forwarding Service
                         </div>
                     </div>
                 </div>
