@@ -189,24 +189,15 @@ fun MainScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "🧪 테스트",
+                                text = "ℹ️ 정보",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "SMS 수신 테스트 (가상 메시지 전송)",
+                                text = "SMS를 받으면 자동으로 이메일로 전송됩니다",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
-                            Button(
-                                onClick = { viewModel.testSmsReceiver() },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.tertiary
-                                )
-                            ) {
-                                Text("테스트 SMS 전송")
-                            }
                         }
                     }
                 }

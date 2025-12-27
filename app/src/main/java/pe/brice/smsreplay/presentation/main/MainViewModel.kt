@@ -147,24 +147,6 @@ class MainViewModel : ViewModel(), KoinComponent {
         serviceManager.stopMonitoring()
     }
 
-    fun testSmsReceiver() {
-        viewModelScope.launch {
-            try {
-                timber.log.Timber.i("===== Testing SMS Receiver manually =====")
-                val testSms = pe.brice.smsreplay.domain.model.SmsMessage(
-                    sender = "01012345678",
-                    body = "테스트 메시지입니다",
-                    timestamp = System.currentTimeMillis()
-                )
-                val sendSmsAsEmailUseCase: pe.brice.smsreplay.domain.usecase.SendSmsAsEmailUseCase by inject()
-                val result = sendSmsAsEmailUseCase(testSms)
-                timber.log.Timber.i("Test SMS result: $result")
-            } catch (e: Exception) {
-                timber.log.Timber.e(e, "Test SMS failed")
-            }
-        }
-    }
-
     fun refreshPermissions() {
         permissionManager.refresh()
         batteryOptimizationManager.refresh()
