@@ -8,14 +8,31 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import pe.brice.smsreplay.MainActivity
 import pe.brice.smsreplay.R
+import pe.brice.smsreplay.domain.model.SendingResult
+import pe.brice.smsreplay.domain.model.SmsMessage
+import pe.brice.smsreplay.domain.usecase.SendSmsAsEmailUseCase
 import timber.log.Timber
 
 /**
  * Foreground Service for SMS monitoring
- * Maintains persistent notification: "SMS 수신 대기중입니다"
+ *
+ * Responsibilities:
+ * - Maintains persistent notification: "SMS 수신 대기중입니다"
+ * - Receives SMS events from BroadcastReceiver
+ * - Processes SMS and sends email in background
+ * - Shows Toast for send results
  *
  * Service persistence strategy:
  * - stopWithTask="false" in Manifest: Service continues when app is swiped away
@@ -23,13 +40,21 @@ import timber.log.Timber
  * - onTaskRemoved(): Restarts service when app task is removed
  * - MainActivity: Checks and restarts service when app launches
  */
-class SmsForegroundService : android.app.Service() {
+class SmsForegroundService : android.app.Service(), KoinComponent {
 
     companion object {
         const val CHANNEL_ID = "sms_service_channel"
         const val NOTIFICATION_ID = 1001
         const val ACTION_START = "pe.brice.smsreplay.ACTION_START_SERVICE"
         const val ACTION_STOP = "pe.brice.smsreplay.ACTION_STOP_SERVICE"
+
+        // Action for processing SMS from BroadcastReceiver
+        const val ACTION_PROCESS_SMS = "pe.brice.smsreplay.ACTION_PROCESS_SMS"
+
+        // Extras for SMS data
+        const val EXTRA_SMS_SENDER = "extra_sms_sender"
+        const val EXTRA_SMS_BODY = "extra_sms_body"
+        const val EXTRA_SMS_TIMESTAMP = "extra_sms_timestamp"
 
         fun startService(context: Context) {
             Timber.i("Starting SMS monitoring service")
@@ -50,7 +75,30 @@ class SmsForegroundService : android.app.Service() {
             }
             context.startService(intent)
         }
+
+        /**
+         * Send SMS to service for processing
+         * Called from BroadcastReceiver when SMS is received
+         */
+        fun processSms(context: Context, sender: String, body: String, timestamp: Long) {
+            val intent = Intent(context, SmsForegroundService::class.java).apply {
+                action = ACTION_PROCESS_SMS
+                putExtra(EXTRA_SMS_SENDER, sender)
+                putExtra(EXTRA_SMS_BODY, body)
+                putExtra(EXTRA_SMS_TIMESTAMP, timestamp)
+            }
+            // Use startService with component to ensure service receives the intent
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
     }
+
+    private val serviceJob = SupervisorJob()
+    private val serviceScope = CoroutineScope(serviceJob + Dispatchers.IO)
+    private val sendSmsAsEmailUseCase: SendSmsAsEmailUseCase by inject()
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -74,6 +122,15 @@ class SmsForegroundService : android.app.Service() {
                 stopSelf()
                 return START_NOT_STICKY  // Don't restart if explicitly stopped
             }
+            ACTION_PROCESS_SMS -> {
+                // Process SMS from BroadcastReceiver
+                val sender = intent.getStringExtra(EXTRA_SMS_SENDER) ?: ""
+                val body = intent.getStringExtra(EXTRA_SMS_BODY) ?: ""
+                val timestamp = intent.getLongExtra(EXTRA_SMS_TIMESTAMP, System.currentTimeMillis())
+
+                Timber.d("Processing SMS from service: sender=$sender")
+                processSms(sender, body, timestamp)
+            }
             null -> {
                 // Service restarted by system (START_STICKY), restore foreground state
                 Timber.d("Service restarted by system")
@@ -85,12 +142,88 @@ class SmsForegroundService : android.app.Service() {
         return START_STICKY
     }
 
+    /**
+     * Process SMS and send email
+     * Called in service scope which is safe for long-running operations
+     */
+    private fun processSms(sender: String, body: String, timestamp: Long) {
+        serviceScope.launch {
+            try {
+                val sms = SmsMessage(
+                    sender = sender,
+                    body = body,
+                    timestamp = timestamp
+                )
+
+                Timber.d("SMS received from ${sms.sender}: ${sms.body}")
+
+                // Send SMS as email
+                Timber.i("Calling sendSmsAsEmailUseCase...")
+                val result = sendSmsAsEmailUseCase(sms)
+                Timber.i("sendSmsAsEmailUseCase result: $result")
+
+                // Show Toast based on result
+                showToast(result)
+
+                when (result) {
+                    is SendingResult.Success -> {
+                        Timber.i("✅ Email sent successfully for SMS from ${sms.sender}")
+                    }
+                    is SendingResult.Failure -> {
+                        val failure = result as SendingResult.Failure
+                        Timber.e("❌ Failed to send email: ${failure.message}")
+                    }
+                    is SendingResult.Retry -> {
+                        Timber.w("⏰ Scheduled retry for SMS from ${sms.sender}")
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "❌ Error processing SMS")
+                showToast(null)
+            }
+        }
+    }
+
+    /**
+     * Show Toast message based on sending result
+     */
+    private fun showToast(result: SendingResult?) {
+        try {
+            val message = when (result) {
+                is SendingResult.Success -> {
+                    "✅ SMS 이메일 전송 성공"
+                }
+                is SendingResult.Failure -> {
+                    val failure = result as SendingResult.Failure
+                    when (failure.error) {
+                        SendingResult.ErrorType.AUTHENTICATION_FAILED -> "❌ SMTP 인증 실패 (비밀번호 확인)"
+                        SendingResult.ErrorType.INVALID_RECIPIENT -> "❌ 수신자 이메일 오류"
+                        SendingResult.ErrorType.SMTP_ERROR -> "❌ SMTP 서버 오류"
+                        SendingResult.ErrorType.NETWORK_ERROR -> "❌ 네트워크 오류"
+                        else -> "❌ 이메일 전송 실패: ${failure.message}"
+                    }
+                }
+                is SendingResult.Retry -> {
+                    "⏰ SMS 이메일 재시도 예약"
+                }
+                null -> {
+                    "❌ SMS 처리 오류"
+                }
+            }
+
+            // Show toast on main thread
+            CoroutineScope(Dispatchers.Main).launch {
+                Toast.makeText(this@SmsForegroundService, message, Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to show toast")
+        }
+    }
+
     override fun onTaskRemoved(rootIntent: Intent?) {
         Timber.d("Task removed - app was swiped away or force-quit")
 
         // Attempt to restart service when app task is removed
-        // This is called when user swipes app away or force-quits
-        // Note: This may not work on all Android versions/manufacturers
         try {
             val restartIntent = Intent(this, SmsForegroundService::class.java).apply {
                 action = ACTION_START
@@ -111,10 +244,8 @@ class SmsForegroundService : android.app.Service() {
     override fun onDestroy() {
         super.onDestroy()
         Timber.d("SmsForegroundService destroyed")
-        // NOTE: NOT restarting service here to avoid infinite loop
-        // System will restart via START_STICKY if appropriate
-        // MainActivity will check and restart on app launch
-        // onTaskRemoved() handles app swipe/force-quit scenario
+        // Cancel coroutine job
+        serviceJob.cancel()
     }
 
     /**
