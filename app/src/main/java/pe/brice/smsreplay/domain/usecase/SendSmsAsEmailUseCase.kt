@@ -69,7 +69,8 @@ class SendSmsAsEmailUseCase(
             to = "",   // Will be set from SMTP config
             subject = subject,
             htmlContent = htmlTemplate,
-            timestamp = sms.timestamp
+            timestamp = sms.timestamp,
+            senderPhone = sms.sender  // SMS sender phone number for From header
         )
 
         // 5. Send email

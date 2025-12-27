@@ -53,12 +53,15 @@ class EmailSenderRepositoryImpl(
                 password = smtpConfig.password
             )
 
-            // 4. Create Email DTO
-            val emailDto = Email(
-                from = smtpConfig.senderEmail,  // SMTP 설정의 발신자 이메일 사용
-                to = smtpConfig.recipientEmail, // SMTP 설정의 수신자 이메일 사용
-                subject = email.subject,
-                htmlContent = email.htmlContent
+            // 4. Create Email DTO using fromSms factory method
+            // This creates the From header as "phone <email>" format
+            val emailDto = Email.fromSms(
+                sender = email.senderPhone,
+                body = "", // Body is already in htmlContent from template
+                timestamp = email.timestamp,
+                fromEmail = smtpConfig.senderEmail,
+                toEmail = smtpConfig.recipientEmail,
+                htmlTemplate = email.htmlContent
             )
 
             // 5. Send email

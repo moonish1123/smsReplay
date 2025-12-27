@@ -8,7 +8,8 @@ data class EmailMessage(
     val to: String,
     val subject: String,
     val htmlContent: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val senderPhone: String = ""  // SMS sender phone number for From header
 ) {
     fun isValid(): Boolean {
         return from.isNotBlank() &&
