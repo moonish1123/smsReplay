@@ -59,6 +59,8 @@ class MainViewModel : ViewModel(), KoinComponent {
 
     fun checkSystemHealth() {
         viewModelScope.launch {
+            // Short delay to ensure system settings are updated
+            kotlinx.coroutines.delay(300)
             val issues = checkSystemHealthUseCase()
             _uiState.value = _uiState.value.copy(systemIssues = issues)
         }
@@ -107,33 +109,13 @@ class MainViewModel : ViewModel(), KoinComponent {
         viewModelScope.launch {
             getSmtpConfigUseCase().collect { config ->
                 val isConfigured = config?.isValid() ?: false
-                // Check if device alias is missing (only if configured or partially configured)
-                val isDeviceAliasMissing = config?.deviceAlias.isNullOrBlank()
                 
-                Timber.e("SMTP config status updated: isConfigured=$isConfigured, aliasMissing=$isDeviceAliasMissing, config=$config")
+                Timber.e("SMTP config status updated: isConfigured=$isConfigured, config=$config")
                 _uiState.value = _uiState.value.copy(
                     isConfigured = isConfigured,
-                    // If alias is missing, show dialog (but will be gated by permission check in UI)
-                    isDeviceAliasMissing = isDeviceAliasMissing,
-                    currentSmtpConfig = config // Save current config to update it later
+                    currentSmtpConfig = config
                 )
             }
-        }
-    }
-
-    fun saveDeviceAlias(alias: String) {
-        viewModelScope.launch {
-            val currentConfig = _uiState.value.currentSmtpConfig ?: pe.brice.smsreplay.domain.model.SmtpConfig()
-            val newConfig = currentConfig.copy(deviceAlias = alias)
-            Timber.d("Saving device alias: $alias")
-            saveSmtpConfigUseCase(newConfig)
-            
-            // Force update local state immediately to close dialog
-            // The flow collection will eventually update it, but this makes UI responsive
-            _uiState.value = _uiState.value.copy(
-                isDeviceAliasMissing = false,
-                currentSmtpConfig = newConfig
-            )
         }
     }
 
@@ -200,6 +182,5 @@ data class MainUiState(
     val isIgnoringBatteryOptimizations: Boolean = false,
     val isSecurityConfirmed: Boolean = false,
     val systemIssues: List<pe.brice.smsreplay.domain.usecase.CheckSystemHealthUseCase.SystemIssue> = emptyList(),
-    val isDeviceAliasMissing: Boolean = false,
     val currentSmtpConfig: pe.brice.smsreplay.domain.model.SmtpConfig? = null
 )

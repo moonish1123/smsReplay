@@ -37,39 +37,6 @@ fun MainScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Device Alias Input Dialog (Show only after permissions are granted)
-    if (uiState.isDeviceAliasMissing && allPermissionsGranted) {
-        var aliasInput by remember { mutableStateOf("") }
-        
-        AlertDialog(
-            onDismissRequest = { /* Prevent dismiss without input */ },
-            title = { Text("단말기 정보 입력") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("이메일 본문에 표시할 이 기기의 전화번호 또는 별칭을 입력해주세요.")
-                    OutlinedTextField(
-                        value = aliasInput,
-                        onValueChange = { aliasInput = it },
-                        label = { Text("예: 010-1234-5678 또는 업무폰") },
-                        singleLine = true
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = { 
-                        if (aliasInput.isNotBlank()) {
-                            viewModel.saveDeviceAlias(aliasInput)
-                        }
-                    },
-                    enabled = aliasInput.isNotBlank()
-                ) {
-                    Text("저장")
-                }
-            }
-        )
-    }
-
     // Security Confirmation Dialog
     if (uiState.showSecurityDialog) {
         var userInput by remember { mutableStateOf("") }

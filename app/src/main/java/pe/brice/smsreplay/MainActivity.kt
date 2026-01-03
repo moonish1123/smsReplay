@@ -35,6 +35,7 @@ import pe.brice.smsreplay.ui.theme.SmsReplayTheme
 import androidx.core.net.toUri
 import timber.log.Timber
 import org.koin.compose.KoinContext
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import pe.brice.smsreplay.domain.service.ServiceControl
 import pe.brice.smsreplay.domain.service.PermissionChecker
 
@@ -120,8 +121,8 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
         val batteryOptimizationChecker: pe.brice.smsreplay.domain.service.BatteryOptimizationChecker by inject()
         batteryOptimizationChecker.checkBatteryOptimization()
 
-        // Refresh ViewModel state
-        val mainViewModel by inject<pe.brice.smsreplay.presentation.main.MainViewModel>()
+        // Use the activity-scoped viewModel
+        val mainViewModel: pe.brice.smsreplay.presentation.main.MainViewModel by viewModel()
         mainViewModel.refreshPermissions()
     }
 

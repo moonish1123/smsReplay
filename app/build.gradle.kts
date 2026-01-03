@@ -19,8 +19,8 @@ android {
         applicationId = "pe.brice.smsreplay"
         minSdk = 26  // Android 8.0+ for adaptive icons and better security API
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -7,9 +7,10 @@ import javax.mail.internet.InternetAddress
  * Supports multiple recipients separated by comma
  */
 data class Email(
-    val from: String,           // Sender email (supports "Name <email>" format)
+    val from: String,           // Sender email address
+    val fromName: String = "",  // Sender display name (will be encoded)
     val to: String,             // Recipient emails (comma-separated)
-    val subject: String,        // Email subject (sender + timestamp)
+    val subject: String,        // Email subject
     val htmlContent: String     // HTML email body
 ) {
     companion object {
@@ -28,11 +29,9 @@ data class Email(
             val formattedTime = formatTimestamp(timestamp)
             val subject = "$sender => $deviceAlias at ($formattedTime)"
 
-            // From format: "01012345678 <email@domain.com>"
-            val fromAddress = "\"$deviceAlias\" <$fromEmail>"
-
             return Email(
-                from = fromAddress,
+                from = fromEmail,
+                fromName = "$sender ($deviceAlias)", // Separate name from address
                 to = toEmail,
                 subject = subject,
                 htmlContent = htmlTemplate
@@ -47,23 +46,20 @@ data class Email(
 
     /**
      * Validate email fields
-     * Supports multiple recipients separated by comma or semicolon
-     * Supports "Name <email>" format for sender
      */
     fun isValid(): Boolean {
         return from.isNotBlank() &&
                 to.isNotBlank() &&
                 subject.isNotBlank() &&
                 htmlContent.isNotBlank() &&
-                isValidFromEmail(from) &&
+                isValidEmail(from) &&
                 areRecipientEmailsValid()
     }
 
     /**
-     * Validate sender email using InternetAddress
-     * Supports both "email@domain.com" and "Name <email@domain.com>" formats
+     * Validate email using InternetAddress
      */
-    private fun isValidFromEmail(email: String): Boolean {
+    private fun isValidEmail(email: String): Boolean {
         return try {
             InternetAddress(email).validate()
             true

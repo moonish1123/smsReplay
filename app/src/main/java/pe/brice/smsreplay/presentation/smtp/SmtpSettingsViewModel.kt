@@ -39,7 +39,7 @@ class SmtpSettingsViewModel : ViewModel(), KoinComponent {
                             username = it.username,
                             password = it.password,
                             recipientEmail = it.recipientEmail,
-                            currentDeviceAlias = it.deviceAlias // Preserve existing alias
+                            deviceAlias = it.deviceAlias
                         )
                     }
                 }
@@ -69,6 +69,10 @@ class SmtpSettingsViewModel : ViewModel(), KoinComponent {
 
     fun onRecipientEmailChange(value: String) {
         _uiState.value = _uiState.value.copy(recipientEmail = value, showErrors = false)
+    }
+
+    fun onDeviceAliasChange(value: String) {
+        _uiState.value = _uiState.value.copy(deviceAlias = value, showErrors = false)
     }
 
     // 발신자 이메일 자동 생성 (읽기 전용)
@@ -121,7 +125,7 @@ class SmtpSettingsViewModel : ViewModel(), KoinComponent {
                     password = state.password,
                     senderEmail = senderEmail.trim(),
                     recipientEmail = state.recipientEmail.trim(),
-                    deviceAlias = state.currentDeviceAlias // Preserve existing alias
+                    deviceAlias = state.deviceAlias.trim()
                 )
 
                 // 먼저 임시로 저장해서 연결 테스트
@@ -172,9 +176,9 @@ data class SmtpSettingsUiState(
     val username: String = "",
     val password: String = "",
     val recipientEmail: String = "",
+    val deviceAlias: String = "", // New field for input
     val isSaving: Boolean = false,
     val isSuccess: Boolean = false,
     val showErrors: Boolean = false,
-    val errorMessage: String? = null,
-    val currentDeviceAlias: String = "" // To preserve device alias during updates
+    val errorMessage: String? = null
 )

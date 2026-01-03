@@ -1,5 +1,7 @@
 package pe.brice.smsreplay.presentation.smtp
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -79,11 +81,14 @@ fun SmtpSettingsScreen(
             )
         }
     ) { paddingValues ->
+        val scrollState = rememberScrollState()
+        
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Info Card
@@ -184,6 +189,20 @@ fun SmtpSettingsScreen(
                 }
             }
 
+            // Device Alias
+            OutlinedTextField(
+                value = uiState.deviceAlias,
+                onValueChange = { viewModel.onDeviceAliasChange(it) },
+                label = { Text("단말기 별칭 / 번호") },
+                placeholder = { Text("예: 메인폰, 업무폰") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                isError = uiState.showErrors && uiState.deviceAlias.isBlank(),
+                supportingText = {
+                    Text("이메일 본문과 발신자 이름에 표시될 이름입니다")
+                }
+            )
+
             // Recipient Email
             Column {
                 OutlinedTextField(
@@ -204,7 +223,7 @@ fun SmtpSettingsScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Save Button
             Button(

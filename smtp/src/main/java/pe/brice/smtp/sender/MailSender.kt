@@ -137,11 +137,12 @@ class MailSender(
      */
     private fun createMimeMessage(session: Session, email: Email): MimeMessage {
         val message = MimeMessage(session).apply {
-            // Set sender - parse "Name <email>" format to preserve display name
-            println("SMTP: Setting From header: ${email.from}")
-            val fromAddress = InternetAddress(email.from)
-            println("SMTP: Parsed From Address: ${fromAddress.address}, Personal: ${fromAddress.personal}")
-            setFrom(fromAddress)
+            // Set sender with UTF-8 encoding for personal name
+            if (email.fromName.isNotBlank()) {
+                setFrom(InternetAddress(email.from, email.fromName, "UTF-8"))
+            } else {
+                setFrom(InternetAddress(email.from))
+            }
 
             // Set recipient
             setRecipients(
