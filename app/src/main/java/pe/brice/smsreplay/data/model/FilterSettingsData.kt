@@ -23,8 +23,14 @@ data class FilterSettingsData(
                 sender.contains(senderNumber, ignoreCase = true)
 
         // Check body keyword filter (if set)
-        val bodyMatches = bodyKeyword.isNullOrBlank() ||
-                body.contains(bodyKeyword, ignoreCase = true)
+        // Supports multiple keywords separated by comma (OR logic)
+        val bodyMatches = if (bodyKeyword.isNullOrBlank()) {
+            true
+        } else {
+            val keywords = bodyKeyword.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            if (keywords.isEmpty()) true
+            else keywords.any { body.contains(it, ignoreCase = true) }
+        }
 
         // AND condition: both must match
         return senderMatches && bodyMatches

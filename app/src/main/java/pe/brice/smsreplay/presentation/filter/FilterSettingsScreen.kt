@@ -128,7 +128,7 @@ fun FilterSettingsScreen(
                     }
 
                     Text(
-                        text = "본문에 특정 문자열이 포함된 SMS만 전송합니다",
+                        text = "본문에 특정 문자열이 포함된 SMS만 전송합니다.\n쉼표(,)로 구분하여 여러 키워드를 입력하면 하나만 일치해도 전송됩니다 (OR 조건)",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
