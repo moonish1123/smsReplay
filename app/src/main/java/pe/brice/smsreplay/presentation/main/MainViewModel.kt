@@ -13,25 +13,26 @@ import pe.brice.smsreplay.domain.usecase.CheckSystemHealthUseCase
 import pe.brice.smsreplay.domain.usecase.GetSmtpConfigUseCase
 import pe.brice.smsreplay.domain.usecase.GetSecurityConfirmedUseCase
 import pe.brice.smsreplay.domain.usecase.SetSecurityConfirmedUseCase
-import pe.brice.smsreplay.service.BatteryOptimizationManager
-import pe.brice.smsreplay.service.PermissionManager
-import pe.brice.smsreplay.service.ServiceManager
-import pe.brice.smsreplay.work.SmsQueueManager
+import pe.brice.smsreplay.domain.service.BatteryOptimizationChecker
+import pe.brice.smsreplay.domain.service.PermissionChecker
+import pe.brice.smsreplay.domain.service.ServiceControl
+import pe.brice.smsreplay.domain.service.SmsQueueControl
 import timber.log.Timber
 
 /**
  * ViewModel for Main Screen
  * Handles service control and status display
  *
- * Clean Architecture: Only depends on Domain Layer UseCases and infrastructure services
+ * Clean Architecture: Depends only on Domain Layer (UseCases and service interfaces)
+ * No direct dependencies on Infrastructure Layer implementations.
  */
 class MainViewModel : ViewModel(), KoinComponent {
 
-    // Infrastructure services (not Domain Layer, but necessary for Android integration)
-    private val serviceManager: ServiceManager by inject()
-    private val permissionManager: PermissionManager by inject()
-    private val batteryOptimizationManager: BatteryOptimizationManager by inject()
-    private val smsQueueManager: SmsQueueManager by inject()
+    // Domain Layer service interfaces (abstractions from Infrastructure Layer)
+    private val serviceControl: ServiceControl by inject()
+    private val permissionChecker: PermissionChecker by inject()
+    private val batteryOptimizationChecker: BatteryOptimizationChecker by inject()
+    private val smsQueueControl: SmsQueueControl by inject()
 
     // Domain UseCases
     private val getSmtpConfigUseCase: GetSmtpConfigUseCase by inject()
@@ -65,7 +66,7 @@ class MainViewModel : ViewModel(), KoinComponent {
 
     private fun loadServiceStatus() {
         viewModelScope.launch {
-            serviceManager.isServiceRunning.collect { isRunning ->
+            serviceControl.isServiceRunning.collect { isRunning ->
                 _uiState.value = _uiState.value.copy(isServiceRunning = isRunning)
             }
         }
@@ -73,7 +74,7 @@ class MainViewModel : ViewModel(), KoinComponent {
 
     private fun loadPermissionsStatus() {
         viewModelScope.launch {
-            permissionManager.hasRequiredPermissions.collect { hasPermissions ->
+            permissionChecker.hasRequiredPermissions.collect { hasPermissions ->
                 _uiState.value = _uiState.value.copy(hasPermissions = hasPermissions)
             }
         }
@@ -81,7 +82,7 @@ class MainViewModel : ViewModel(), KoinComponent {
 
     private fun loadBatteryStatus() {
         viewModelScope.launch {
-            batteryOptimizationManager.isIgnoringBatteryOptimizations.collect { isIgnoring ->
+            batteryOptimizationChecker.isIgnoringBatteryOptimizations.collect { isIgnoring ->
                 _uiState.value = _uiState.value.copy(isIgnoringBatteryOptimizations = isIgnoring)
             }
         }
@@ -89,7 +90,7 @@ class MainViewModel : ViewModel(), KoinComponent {
 
     private fun loadQueueStatus() {
         viewModelScope.launch {
-            smsQueueManager.queueSize.collect { size ->
+            smsQueueControl.queueSize.collect { size ->
                 _uiState.value = _uiState.value.copy(queueSize = size)
             }
         }
@@ -155,10 +156,10 @@ class MainViewModel : ViewModel(), KoinComponent {
     private suspend fun attemptStartService() {
         // Check if service can be started
         val canStart = canStartMonitoringUseCase()
-        val hasPermissions = permissionManager.checkAllPermissions()
+        val hasPermissions = permissionChecker.checkAllPermissions()
 
         if (canStart && hasPermissions) {
-            serviceManager.startMonitoring()
+            serviceControl.startMonitoring()
         } else {
             // Update UI state to reflect current conditions
             _uiState.value = _uiState.value.copy(
@@ -173,12 +174,12 @@ class MainViewModel : ViewModel(), KoinComponent {
     }
 
     fun stopService() {
-        serviceManager.stopMonitoring()
+        serviceControl.stopMonitoring()
     }
 
     fun refreshPermissions() {
-        permissionManager.refresh()
-        batteryOptimizationManager.refresh()
+        permissionChecker.refresh()
+        batteryOptimizationChecker.refresh()
         checkSystemHealth() // Re-check health on refresh
     }
 }

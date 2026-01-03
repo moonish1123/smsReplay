@@ -35,6 +35,8 @@ import pe.brice.smsreplay.ui.theme.SmsReplayTheme
 import androidx.core.net.toUri
 import timber.log.Timber
 import org.koin.compose.KoinContext
+import pe.brice.smsreplay.domain.service.ServiceControl
+import pe.brice.smsreplay.domain.service.PermissionChecker
 
 class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent {
 
@@ -83,18 +85,18 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
         }
 
         // Auto-start service if configured
-        val serviceManager by inject<pe.brice.smsreplay.service.ServiceManager>()
-        val permissionManager by inject<pe.brice.smsreplay.service.PermissionManager>()
+        val serviceControl: ServiceControl by inject()
+        val permissionChecker: PermissionChecker by inject()
         val canStartMonitoringUseCase by inject<pe.brice.smsreplay.domain.usecase.CanStartMonitoringUseCase>()
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val isConfigured = canStartMonitoringUseCase()
-                val hasPermissions = permissionManager.checkAllPermissions()
+                val hasPermissions = permissionChecker.checkAllPermissions()
 
-                if (isConfigured && hasPermissions && !serviceManager.isServiceRunning.value) {
+                if (isConfigured && hasPermissions && !serviceControl.isServiceRunning.value) {
                     Timber.i("Auto-starting service on app launch")
-                    serviceManager.startMonitoring()
+                    serviceControl.startMonitoring()
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to auto-start service")
@@ -115,9 +117,9 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
     override fun onResume() {
         super.onResume()
         // 화면이 다시 그려질 때 배터리 최적화 상태 및 시스템 상태 체크
-        val batteryOptimizationManager by inject<pe.brice.smsreplay.service.BatteryOptimizationManager>()
-        batteryOptimizationManager.checkBatteryOptimization()
-        
+        val batteryOptimizationChecker: pe.brice.smsreplay.domain.service.BatteryOptimizationChecker by inject()
+        batteryOptimizationChecker.checkBatteryOptimization()
+
         // Refresh ViewModel state
         val mainViewModel by inject<pe.brice.smsreplay.presentation.main.MainViewModel>()
         mainViewModel.refreshPermissions()

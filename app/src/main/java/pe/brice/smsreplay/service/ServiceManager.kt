@@ -14,17 +14,21 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
 import androidx.core.net.toUri
+import pe.brice.smsreplay.domain.service.ServiceControl
 
 /**
  * Service Manager for SMS monitoring service lifecycle
  * Responsible ONLY for service start/stop and state management
  *
+ * Clean Architecture: Implements ServiceControl interface from Domain Layer
+ * This allows Domain Layer to control service without Android dependencies.
+ *
  * Note: This is an infrastructure service, not part of Domain Layer
  */
-class ServiceManager(private val context: Context) {
+class ServiceManager(private val context: Context) : ServiceControl {
 
     private val _isServiceRunning = MutableStateFlow(false)
-    val isServiceRunning: StateFlow<Boolean> = _isServiceRunning.asStateFlow()
+    override val isServiceRunning: StateFlow<Boolean> = _isServiceRunning.asStateFlow()
 
     init {
         // Check if service is actually running on initialization
@@ -35,7 +39,7 @@ class ServiceManager(private val context: Context) {
     /**
      * Start SMS monitoring service
      */
-    fun startMonitoring() {
+    override fun startMonitoring() {
         if (_isServiceRunning.value) {
             Timber.d("Service already running")
             return
@@ -49,7 +53,7 @@ class ServiceManager(private val context: Context) {
     /**
      * Stop SMS monitoring service
      */
-    fun stopMonitoring() {
+    override fun stopMonitoring() {
         if (!_isServiceRunning.value) {
             Timber.d("Service not running")
             return

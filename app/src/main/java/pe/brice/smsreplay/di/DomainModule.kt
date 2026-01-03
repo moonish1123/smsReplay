@@ -1,13 +1,13 @@
-package pe.brice.smsreplay.presentation.di
+package pe.brice.smsreplay.di
 
 import org.koin.dsl.module
 import pe.brice.smsreplay.domain.usecase.*
 
 /**
- * Koin DI Module for Use Cases
- * Domain Layer business logic
+ * Koin DI Module for Domain Layer
+ * Clean Architecture: Use Cases (business logic)
  */
-val UseCaseModule = module {
+val DomainModule = module {
 
     // SMTP & Filter Use Cases
     single { GetSmtpConfigUseCase(get()) }
@@ -15,7 +15,11 @@ val UseCaseModule = module {
     single { TestSmtpConnectionUseCase(get()) }
     single { GetFilterSettingsUseCase(get()) }
     single { SaveFilterSettingsUseCase(get()) }
-    single { SendSmsAsEmailUseCase(get(), get(), get(), get()) }
+    single { SendSmsAsEmailUseCase(get(), get(), get(), get(), get()) }
+
+    // SMS Processing Use Cases
+    single { HandleSmsSendingResultUseCase(get()) }
+    single { FlushPendingMessagesUseCase(get(), get()) }
 
     // Service Control Use Cases
     single { CanStartMonitoringUseCase(get()) }

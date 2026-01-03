@@ -8,9 +8,10 @@ import pe.brice.smsreplay.presentation.main.MainViewModel
 import pe.brice.smsreplay.presentation.smtp.SmtpSettingsViewModel
 
 /**
- * Koin DI Module for ViewModels
+ * Koin DI Module for Presentation Layer
+ * Clean Architecture: ViewModels
  */
-val ViewModelModule = module {
+val PresentationModule = module {
 
     // Main Screen ViewModel
     viewModel { MainViewModel() }

@@ -57,7 +57,7 @@ class EmailSenderRepositoryImpl(
             // This creates the From header as "phone <email>" format
             val emailDto = Email.fromSms(
                 sender = email.senderPhone,
-                body = "", // Body is already in htmlContent from template
+                deviceAlias = email.deviceAlias,
                 timestamp = email.timestamp,
                 fromEmail = smtpConfig.senderEmail,
                 toEmail = smtpConfig.recipientEmail,

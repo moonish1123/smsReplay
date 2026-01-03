@@ -43,6 +43,7 @@ class SmsRetryWorker(
     }
 
     private val sendSmsAsEmailUseCase: SendSmsAsEmailUseCase by inject()
+    private val smsQueueControl: pe.brice.smsreplay.domain.service.SmsQueueControl by inject()
 
     override suspend fun doWork(): Result {
         val sender = inputData.getString(KEY_SENDER) ?: return Result.failure()
@@ -64,6 +65,8 @@ class SmsRetryWorker(
             when (result) {
                 is pe.brice.smsreplay.domain.model.SendingResult.Success -> {
                     Timber.i("Email sent successfully on retry attempt ${retryCount + 1}")
+                    // ✅ Remove from queue to prevent duplicate sends
+                    smsQueueControl.markAsSent(sms)
                     Result.success()
                 }
                 is pe.brice.smsreplay.domain.model.SendingResult.Failure -> {
@@ -72,10 +75,14 @@ class SmsRetryWorker(
 
                     // Check if should retry
                     if (retryCount < getMaxRetries() - 1 && isRetryableError(failure)) {
+                        // ✅ Update retry count in queue
+                        smsQueueControl.incrementRetryCount(sms)
                         Timber.w("Scheduling next retry (attempt ${retryCount + 2}/${getMaxRetries()})")
                         Result.retry()
                     } else {
+                        // ✅ Mark as permanently failed (max retries reached)
                         Timber.e("Max retries reached or non-retryable error")
+                        smsQueueControl.markAsFailed(sms)
                         Result.failure()
                     }
                 }
@@ -84,8 +91,12 @@ class SmsRetryWorker(
                     Timber.w("Use case requested retry: ${retryState.retryCount}/${retryState.maxRetries}")
 
                     if (retryState.retryCount < retryState.maxRetries) {
+                        // ✅ Update retry count in queue
+                        smsQueueControl.incrementRetryCount(sms)
                         Result.retry()
                     } else {
+                        // ✅ Max retries reached
+                        smsQueueControl.markAsFailed(sms)
                         Result.failure()
                     }
                 }

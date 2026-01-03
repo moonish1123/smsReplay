@@ -22,17 +22,25 @@ import pe.brice.smsreplay.MainActivity
 import pe.brice.smsreplay.R
 import pe.brice.smsreplay.domain.model.SendingResult
 import pe.brice.smsreplay.domain.model.SmsMessage
+import pe.brice.smsreplay.domain.usecase.FlushPendingMessagesUseCase
+import pe.brice.smsreplay.domain.usecase.HandleSmsSendingResultUseCase
 import pe.brice.smsreplay.domain.usecase.SendSmsAsEmailUseCase
 import timber.log.Timber
 
 /**
  * Foreground Service for SMS monitoring
  *
+ * Clean Architecture: Infrastructure Layer only
  * Responsibilities:
  * - Maintains persistent notification: "SMS 수신 대기중입니다"
  * - Receives SMS events from BroadcastReceiver
- * - Processes SMS and sends email in background
- * - Shows Toast for send results
+ * - Delegates SMS processing to Domain Layer UseCases
+ * - Shows Toast for send results (UI notification)
+ *
+ * Business Logic Extraction:
+ * - Retry logic: Moved to HandleSmsSendingResultUseCase
+ * - Queue flushing: Moved to FlushPendingMessagesUseCase
+ * - Service only handles Android-specific concerns (coroutines, lifecycle, Toast)
  *
  * Service persistence strategy:
  * - stopWithTask="false" in Manifest: Service continues when app is swiped away
@@ -98,8 +106,11 @@ class SmsForegroundService : android.app.Service(), KoinComponent {
 
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(serviceJob + Dispatchers.IO)
+
+    // Domain Layer UseCases - business logic
     private val sendSmsAsEmailUseCase: SendSmsAsEmailUseCase by inject()
-    private val smsQueueManager: pe.brice.smsreplay.work.SmsQueueManager by inject()
+    private val handleSmsSendingResultUseCase: HandleSmsSendingResultUseCase by inject()
+    private val flushPendingMessagesUseCase: FlushPendingMessagesUseCase by inject()
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -127,7 +138,7 @@ class SmsForegroundService : android.app.Service(), KoinComponent {
         // Try to flush queue on service start (e.g. after reboot or crash restart)
         serviceScope.launch {
             Timber.i("Service started. Checking for pending messages...")
-            smsQueueManager.flushQueue(sendSmsAsEmailUseCase)
+            flushPendingMessagesUseCase()
         }
     }
 
@@ -167,6 +178,11 @@ class SmsForegroundService : android.app.Service(), KoinComponent {
 
     /**
      * Process SMS and send email
+     *
+     * Clean Architecture: Service delegates to Domain Layer UseCases
+     * - Infrastructure: Coroutine scope management, Toast notifications
+     * - Domain: Business logic (sending, retry decisions, queue management)
+     *
      * Called in service scope which is safe for long-running operations
      */
     private fun processSms(sender: String, body: String, timestamp: Long) {
@@ -180,49 +196,38 @@ class SmsForegroundService : android.app.Service(), KoinComponent {
 
                 Timber.d("SMS received from ${sms.sender}: ${sms.body}")
 
-                // Send SMS as email
+                // 1. Send SMS as email (Domain Layer business logic)
                 Timber.i("Calling sendSmsAsEmailUseCase...")
                 val result = sendSmsAsEmailUseCase(sms)
                 Timber.i("sendSmsAsEmailUseCase result: $result")
 
-                // Show Toast based on result
-                showToast(result)
+                // 2. Handle result with business logic use case (retry decisions, queue management)
+                val handleResult = handleSmsSendingResultUseCase(sms, result)
 
-                when (result) {
-                    is SendingResult.Success -> {
-                        Timber.i("✅ Email sent successfully for SMS from ${sms.sender}")
-                        // Flush any pending messages in queue since network seems to be working
-                        smsQueueManager.flushQueue(sendSmsAsEmailUseCase)
-                    }
-                    is SendingResult.Failure -> {
-                        val failure = result as SendingResult.Failure
-                        Timber.e("❌ Failed to send email: ${failure.message}")
-                        
-                        // Enqueue for later retry if error is recoverable (e.g. Network, SMTP)
-                        // Or just enqueue everything to be safe? 
-                        // Let's enqueue everything for now to ensure no data loss.
-                        // The worker/flush logic will decide if it can be sent later.
-                        smsQueueManager.enqueue(sms)
-                        Timber.i("💾 SMS queued for retry due to failure")
-                    }
-                    is SendingResult.Retry -> {
-                        Timber.w("⏰ Scheduled retry for SMS from ${sms.sender}")
-                        // Explicitly requested retry
-                        smsQueueManager.enqueue(sms)
-                        Timber.i("💾 SMS queued for explicit retry")
-                    }
-                }
+                // 3. Show Toast based on result (Infrastructure concern: Android UI)
+                showToast(result, handleResult)
+
+                // 4. Flush pending messages (always trigger to process queue)
+                //    This handles both success (process other queued messages)
+                //    and failure (process the just-enqueued message + others)
+                flushPendingMessagesUseCase()
             } catch (e: Exception) {
                 Timber.e(e, "❌ Error processing SMS")
-                showToast(null)
+                showToast(null, null)
             }
         }
     }
 
     /**
      * Show Toast message based on sending result
+     *
+     * @param result Sending result from email service
+     * @param handleResult Optional handle result from business logic (for logging)
      */
-    private fun showToast(result: SendingResult?) {
+    private fun showToast(
+        result: SendingResult?,
+        handleResult: pe.brice.smsreplay.domain.usecase.HandleSmsSendingResultUseCase.HandleResult? = null
+    ) {
         try {
             val message = when (result) {
                 is SendingResult.Success -> {
@@ -243,6 +248,21 @@ class SmsForegroundService : android.app.Service(), KoinComponent {
                 }
                 null -> {
                     "❌ SMS 처리 오류"
+                }
+            }
+
+            // Log handle result if available (for debugging)
+            handleResult?.let {
+                when (it) {
+                    is pe.brice.smsreplay.domain.usecase.HandleSmsSendingResultUseCase.HandleResult.Success -> {
+                        Timber.i("✅ HandleResult: Success")
+                    }
+                    is pe.brice.smsreplay.domain.usecase.HandleSmsSendingResultUseCase.HandleResult.Queued -> {
+                        Timber.i("💾 HandleResult: Queued - ${it.reason}")
+                    }
+                    is pe.brice.smsreplay.domain.usecase.HandleSmsSendingResultUseCase.HandleResult.Error -> {
+                        Timber.e("❌ HandleResult: Error - ${it.message}")
+                    }
                 }
             }
 

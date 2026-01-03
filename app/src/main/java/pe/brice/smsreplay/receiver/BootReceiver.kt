@@ -9,18 +9,20 @@ import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import pe.brice.smsreplay.domain.usecase.CanStartMonitoringUseCase
-import pe.brice.smsreplay.service.PermissionManager
-import pe.brice.smsreplay.service.ServiceManager
+import pe.brice.smsreplay.domain.service.PermissionChecker
+import pe.brice.smsreplay.domain.service.ServiceControl
 import timber.log.Timber
 
 /**
  * Boot Receiver for auto-starting SMS monitoring service
  * Automatically starts service on device boot if prerequisites are met
+ *
+ * Clean Architecture: Depends on Domain Layer interfaces
  */
 class BootReceiver : BroadcastReceiver(), KoinComponent {
 
-    private val serviceManager: ServiceManager by inject()
-    private val permissionManager: PermissionManager by inject()
+    private val serviceControl: ServiceControl by inject()
+    private val permissionChecker: PermissionChecker by inject()
     private val canStartMonitoringUseCase: CanStartMonitoringUseCase by inject()
 
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -33,11 +35,11 @@ class BootReceiver : BroadcastReceiver(), KoinComponent {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val isConfigured = canStartMonitoringUseCase()
-                    val hasPermissions = permissionManager.checkAllPermissions()
+                    val hasPermissions = permissionChecker.checkAllPermissions()
 
                     if (isConfigured && hasPermissions) {
                         Timber.i("SMTP configured and permissions granted - starting service")
-                        serviceManager.startMonitoring()
+                        serviceControl.startMonitoring()
                     } else {
                         Timber.w("Service not started: configured=$isConfigured, permissions=$hasPermissions")
                     }

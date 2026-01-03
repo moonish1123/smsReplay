@@ -1,9 +1,8 @@
-package pe.brice.smsreplay.presentation.di
+package pe.brice.smsreplay.di
 
 import org.koin.dsl.module
 import pe.brice.smsreplay.data.datastore.FilterSettingsDataStore
 import pe.brice.smsreplay.data.datastore.SecurePreferencesManager
-import pe.brice.smsreplay.data.dao.SentHistoryDao
 import pe.brice.smsreplay.data.local.dao.PendingSmsDao
 import pe.brice.smsreplay.data.local.database.SmsDatabase
 import pe.brice.smsreplay.data.repository.EmailSenderRepositoryImpl
@@ -12,21 +11,21 @@ import pe.brice.smsreplay.data.repository.PreferenceRepositoryImpl
 import pe.brice.smsreplay.data.repository.SentHistoryRepositoryImpl
 import pe.brice.smsreplay.data.repository.SmtpConfigRepositoryImpl
 import pe.brice.smsreplay.data.repository.SmsQueueRepositoryImpl
+import pe.brice.smsreplay.data.service.EmailTemplateServiceImpl
+import pe.brice.smsreplay.data.local.dao.SentHistoryDao
 import pe.brice.smsreplay.domain.repository.EmailSenderRepository
 import pe.brice.smsreplay.domain.repository.FilterRepository
 import pe.brice.smsreplay.domain.repository.PreferenceRepository
 import pe.brice.smsreplay.domain.repository.SentHistoryRepository
 import pe.brice.smsreplay.domain.repository.SmtpConfigRepository
 import pe.brice.smsreplay.domain.repository.SmsQueueRepository
-import pe.brice.smsreplay.work.SmsQueueManager
+import pe.brice.smsreplay.domain.service.EmailTemplateService
 
 /**
- * Koin DI Module for Repositories
- * Binds interfaces to implementations
- *
- * Clean Architecture: Data Layer implementations only
+ * Koin DI Module for Data Layer
+ * Clean Architecture: Data Layer implementations (repositories, database, services)
  */
-val RepositoryModule = module {
+val DataModule = module {
 
     // DataStore & Preferences
     single { SecurePreferencesManager(get()) }
@@ -45,22 +44,35 @@ val RepositoryModule = module {
     single<SentHistoryRepository> { SentHistoryRepositoryImpl(get()) }
     single<PreferenceRepository> { PreferenceRepositoryImpl(get()) }
 
-    // Queue Manager (infrastructure service)
-    single { SmsQueueManager(get()) }
+    // Email Template Service (bridges Domain Layer to SMTP module)
+    single<EmailTemplateService> { EmailTemplateServiceImpl() }
 }
 
 /**
  * Koin DI Module for Infrastructure Services
- * Android-specific services that don't belong to Domain Layer
+ * Android-specific services that implement Domain Layer interfaces
+ *
+ * Clean Architecture: Infrastructure Layer → Domain Layer (Dependency Inversion)
  */
 val InfrastructureModule = module {
 
-    // Service Manager
-    single { pe.brice.smsreplay.service.ServiceManager(get()) }
+    // Service Manager - implements ServiceControl interface
+    single<pe.brice.smsreplay.domain.service.ServiceControl> {
+        pe.brice.smsreplay.service.ServiceManager(get())
+    }
 
-    // Permission Manager
-    single { pe.brice.smsreplay.service.PermissionManager(get()) }
+    // Permission Manager - implements PermissionChecker interface
+    single<pe.brice.smsreplay.domain.service.PermissionChecker> {
+        pe.brice.smsreplay.service.PermissionManagerImpl(get())
+    }
 
-    // Battery Optimization Manager
-    single { pe.brice.smsreplay.service.BatteryOptimizationManager(get()) }
+    // Battery Optimization Manager - implements BatteryOptimizationChecker interface
+    single<pe.brice.smsreplay.domain.service.BatteryOptimizationChecker> {
+        pe.brice.smsreplay.service.BatteryOptimizationManagerImpl(get())
+    }
+
+    // Queue Manager - implements SmsQueueControl interface
+    single<pe.brice.smsreplay.domain.service.SmsQueueControl> {
+        pe.brice.smsreplay.work.SmsQueueManager(get())
+    }
 }

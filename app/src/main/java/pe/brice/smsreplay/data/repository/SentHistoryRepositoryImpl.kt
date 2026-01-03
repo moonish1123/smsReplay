@@ -2,7 +2,7 @@ package pe.brice.smsreplay.data.repository
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import pe.brice.smsreplay.data.dao.SentHistoryDao
+import pe.brice.smsreplay.data.local.dao.SentHistoryDao
 import pe.brice.smsreplay.data.local.database.SentHistoryEntity
 import pe.brice.smsreplay.domain.model.SentHistory
 import pe.brice.smsreplay.domain.repository.SentHistoryRepository

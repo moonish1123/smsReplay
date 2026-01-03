@@ -39,11 +39,6 @@ interface SmsQueueRepository {
     suspend fun findByTimestamp(timestamp: Long): PendingSmsEntity?
 
     /**
-     * Remove SMS from queue by ID
-     */
-    suspend fun remove(id: Long)
-
-    /**
      * Delete SMS by ID
      */
     suspend fun delete(id: Long)

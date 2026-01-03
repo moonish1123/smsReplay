@@ -68,13 +68,6 @@ class SmsQueueRepositoryImpl(
     }
 
     /**
-     * Remove SMS from queue by ID
-     */
-    override suspend fun remove(id: Long) {
-        pendingSmsDao.deleteById(id)
-    }
-
-    /**
      * Delete SMS by ID
      */
     override suspend fun delete(id: Long) {

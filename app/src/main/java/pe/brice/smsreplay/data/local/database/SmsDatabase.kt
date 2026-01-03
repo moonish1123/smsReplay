@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import pe.brice.smsreplay.data.local.dao.PendingSmsDao
-import pe.brice.smsreplay.data.dao.SentHistoryDao
+import pe.brice.smsreplay.data.local.dao.SentHistoryDao
 import pe.brice.smsreplay.data.local.migrations.MIGRATION_1_2
 
 /**

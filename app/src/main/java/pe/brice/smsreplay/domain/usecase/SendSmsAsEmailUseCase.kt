@@ -5,23 +5,26 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import pe.brice.smtp.template.EmailTemplateBuilder
 import pe.brice.smsreplay.domain.model.EmailMessage
 import pe.brice.smsreplay.domain.model.SendingResult
 import pe.brice.smsreplay.domain.model.SentHistory
 import pe.brice.smsreplay.domain.model.SmsMessage
 import pe.brice.smsreplay.domain.repository.EmailSenderRepository
+import pe.brice.smsreplay.domain.service.EmailTemplateService
 import timber.log.Timber
 
 /**
  * Use case for sending SMS as email
  * Single responsibility: Validate filters, send email, and save history
+ *
+ * Clean Architecture: Depends only on Domain Layer (repositories, services, use cases)
  */
 class SendSmsAsEmailUseCase(
     private val emailSenderRepository: EmailSenderRepository,
     private val getFilterSettingsUseCase: GetFilterSettingsUseCase,
     private val getSmtpConfigUseCase: GetSmtpConfigUseCase,
-    private val addSentHistoryUseCase: AddSentHistoryUseCase
+    private val addSentHistoryUseCase: AddSentHistoryUseCase,
+    private val emailTemplateService: EmailTemplateService
 ) {
     /**
      * Execute use case
@@ -58,8 +61,9 @@ class SendSmsAsEmailUseCase(
         // 4. Create email
         val subject = "[FW SMS] ${sms.sender} (${sms.getFormattedTime()})"
         val deviceAlias = smtpConfig.deviceAlias.ifBlank { "알 수 없는 기기" }
-        
-        val htmlTemplate = EmailTemplateBuilder.buildSmsTemplate(
+
+        // Build HTML template using domain service (abstracted from SMTP module)
+        val htmlTemplate = emailTemplateService.buildSmsTemplate(
             sender = sms.sender,
             body = sms.body,
             timestamp = sms.getFormattedTime(),
@@ -67,17 +71,14 @@ class SendSmsAsEmailUseCase(
             deviceAlias = deviceAlias
         )
 
-        // Format sender address to include sender phone number as display name
-        // Format: "010-1234-5678 <my-email@example.com>"
-        val fromAddress = "\"${sms.sender}\" <${smtpConfig.senderEmail}>"
-
         val emailMessage = EmailMessage(
-            from = fromAddress, 
+            from = smtpConfig.senderEmail,
             to = smtpConfig.recipientEmail,
             subject = subject,
             htmlContent = htmlTemplate,
             timestamp = sms.timestamp,
-            senderPhone = sms.sender
+            senderPhone = sms.sender,
+            deviceAlias
         )
 
         // 5. Send email

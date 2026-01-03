@@ -18,7 +18,7 @@ data class Email(
          */
         fun fromSms(
             sender: String,
-            body: String,
+            deviceAlias: String,
             timestamp: Long,
             fromEmail: String,
             toEmail: String,
@@ -26,10 +26,10 @@ data class Email(
         ): Email {
             // Subject format: "01012345678 (2024-12-26 10:30)"
             val formattedTime = formatTimestamp(timestamp)
-            val subject = "$sender ($formattedTime)"
+            val subject = "$sender => $deviceAlias at ($formattedTime)"
 
             // From format: "01012345678 <email@domain.com>"
-            val fromAddress = "\"$sender\" <$fromEmail>"
+            val fromAddress = "\"$deviceAlias\" <$fromEmail>"
 
             return Email(
                 from = fromAddress,
