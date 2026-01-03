@@ -8,6 +8,7 @@ import pe.brice.smsreplay.presentation.di.InfrastructureModule
 import pe.brice.smsreplay.presentation.di.RepositoryModule
 import pe.brice.smsreplay.presentation.di.UseCaseModule
 import pe.brice.smsreplay.presentation.di.ViewModelModule
+import timber.log.Timber
 
 /**
  * SMS Replay Application
@@ -34,7 +35,7 @@ class SmsReplayApplication : Application() {
 
         // Initialize Timber
         if (BuildConfig.DEBUG) {
-            timber.log.Timber.plant(timber.log.Timber.DebugTree())
+            Timber.plant(Timber.DebugTree())
         }
     }
 }

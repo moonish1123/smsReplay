@@ -57,6 +57,9 @@ android {
 }
 
 dependencies {
+    // Timber for logging
+    implementation("com.jakewharton.timber:timber:5.0.1")
+
     // Core Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -99,9 +102,6 @@ dependencies {
 
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
-
-    // Timber for logging
-    implementation("com.jakewharton.timber:timber:5.0.1")
 
     // SMTP Module (project dependency)
     implementation(project(":smtp"))

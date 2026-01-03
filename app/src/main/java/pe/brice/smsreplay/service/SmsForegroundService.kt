@@ -107,6 +107,20 @@ class SmsForegroundService : android.app.Service(), KoinComponent {
     override fun onCreate() {
         super.onCreate()
         Timber.d("SmsForegroundService created")
+        
+        // Explicitly enable SmsReceiver to ensure system delivers broadcasts
+        try {
+            val componentName = android.content.ComponentName(this, pe.brice.smsreplay.receiver.SmsReceiver::class.java)
+            packageManager.setComponentEnabledSetting(
+                componentName,
+                android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                android.content.pm.PackageManager.DONT_KILL_APP
+            )
+            Timber.i("SmsReceiver explicitly enabled via PackageManager")
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to enable SmsReceiver")
+        }
+
         createNotificationChannel()
     }
 
@@ -123,6 +137,8 @@ class SmsForegroundService : android.app.Service(), KoinComponent {
                 return START_NOT_STICKY  // Don't restart if explicitly stopped
             }
             ACTION_PROCESS_SMS -> {
+                startForeground(NOTIFICATION_ID, createNotification())
+
                 // Process SMS from BroadcastReceiver
                 val sender = intent.getStringExtra(EXTRA_SMS_SENDER) ?: ""
                 val body = intent.getStringExtra(EXTRA_SMS_BODY) ?: ""
@@ -139,7 +155,7 @@ class SmsForegroundService : android.app.Service(), KoinComponent {
         }
 
         // START_STICKY: System will restart service if killed by memory pressure
-        return START_STICKY
+        return START_REDELIVER_INTENT
     }
 
     /**
@@ -223,19 +239,31 @@ class SmsForegroundService : android.app.Service(), KoinComponent {
     override fun onTaskRemoved(rootIntent: Intent?) {
         Timber.d("Task removed - app was swiped away or force-quit")
 
-        // Attempt to restart service when app task is removed
+        // Restart service using AlarmManager (More reliable than direct startService)
         try {
-            val restartIntent = Intent(this, SmsForegroundService::class.java).apply {
+            val restartIntent = Intent(applicationContext, SmsForegroundService::class.java).apply {
                 action = ACTION_START
             }
+            
+            val pendingIntent = PendingIntent.getService(
+                applicationContext,
+                1,
+                restartIntent,
+                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            )
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(restartIntent)
-            } else {
-                startService(restartIntent)
-            }
+            val alarmManager = applicationContext.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+            
+            // Schedule restart after 1 second
+            alarmManager.set(
+                android.app.AlarmManager.RTC_WAKEUP,
+                System.currentTimeMillis() + 3000,
+                pendingIntent
+            )
+            
+            Timber.i("Scheduled service restart via AlarmManager in 1s")
         } catch (e: Exception) {
-            Timber.e(e, "Failed to restart service on task removed")
+            Timber.e(e, "Failed to schedule service restart on task removed")
         }
 
         super.onTaskRemoved(rootIntent)

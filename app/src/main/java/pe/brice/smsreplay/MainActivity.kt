@@ -33,6 +33,8 @@ import pe.brice.smsreplay.presentation.main.MainScreen
 import pe.brice.smsreplay.presentation.smtp.SmtpSettingsScreen
 import pe.brice.smsreplay.ui.theme.SmsReplayTheme
 import androidx.core.net.toUri
+import timber.log.Timber
+import org.koin.compose.KoinContext
 
 class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent {
 
@@ -85,37 +87,28 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
         val permissionManager by inject<pe.brice.smsreplay.service.PermissionManager>()
         val canStartMonitoringUseCase by inject<pe.brice.smsreplay.domain.usecase.CanStartMonitoringUseCase>()
 
-        // 방어 코드: SMS Receiver 활성화 확인
-        try {
-            if (!serviceManager.isReceiverEnabled()) {
-                timber.log.Timber.w("SMS Receiver is disabled, enabling...")
-                serviceManager.ensureReceiverEnabled()
-                timber.log.Timber.i("SMS Receiver enabled successfully")
-            }
-        } catch (e: Exception) {
-            timber.log.Timber.e(e, "Failed to ensure SMS receiver enabled")
-        }
-
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val isConfigured = canStartMonitoringUseCase()
                 val hasPermissions = permissionManager.checkAllPermissions()
 
                 if (isConfigured && hasPermissions && !serviceManager.isServiceRunning.value) {
-                    timber.log.Timber.i("Auto-starting service on app launch")
+                    Timber.i("Auto-starting service on app launch")
                     serviceManager.startMonitoring()
                 }
             } catch (e: Exception) {
-                timber.log.Timber.e(e, "Failed to auto-start service")
+                Timber.e(e, "Failed to auto-start service")
             }
         }
 
         setContent {
-            SmsReplayApp(
-                onRequestPermissions = { requestPermissions() },
-                onOpenAppSettings = { openAppSettings() },
-                onOpenBatteryOptimization = { openBatteryOptimization() }
-            )
+            KoinContext {
+                SmsReplayApp(
+                    onRequestPermissions = { requestPermissions() },
+                    onOpenAppSettings = { openAppSettings() },
+                    onOpenBatteryOptimization = { openBatteryOptimization() }
+                )
+            }
         }
     }
 
@@ -141,7 +134,7 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
     private fun openBatteryOptimization() {
         // 에뮬레이터는 배터리 최적화가 없으므로 앱 설정 화면으로 바로 이동
         if (isEmulator()) {
-            timber.log.Timber.d("Emulator detected, opening app settings instead")
+            Timber.d("Emulator detected, opening app settings instead")
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = Uri.fromParts("package", packageName, null)
             }
@@ -156,31 +149,31 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
                     data = "package:$packageName".toUri()
                 }
                 startActivity(batteryIntent)
-                timber.log.Timber.d("Battery optimization request dialog opened")
+                Timber.d("Battery optimization request dialog opened")
             } catch (e: Exception) {
-                timber.log.Timber.e(e, "Failed to open ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, trying ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS")
+                Timber.e(e, "Failed to open ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, trying ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS")
                 // 실패 시 배터리 최적화 설정 화면으로 이동 (fallback)
                 try {
                     val batterySettingsIntent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
                         data = "package:$packageName".toUri()
                     }
                     startActivity(batterySettingsIntent)
-                    timber.log.Timber.d("Battery optimization settings opened as fallback")
+                    Timber.d("Battery optimization settings opened as fallback")
                 } catch (e2: Exception) {
-                    timber.log.Timber.e(e2, "Failed to open battery optimization settings, trying app settings")
+                    Timber.e(e2, "Failed to open battery optimization settings, trying app settings")
                     // 그래도 실패하면 앱 설정 화면으로 이동
                     try {
                         val appSettingsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                             data = "package:$packageName".toUri()
                         }
                         startActivity(appSettingsIntent)
-                        timber.log.Timber.d("App settings opened as last fallback")
+                        Timber.d("App settings opened as last fallback")
                     } catch (e3: Exception) {
-                        timber.log.Timber.e(e3, "Failed to open app settings, trying general settings")
+                        Timber.e(e3, "Failed to open app settings, trying general settings")
                         // 최후의 수단으로 일반 설정 화면 열기
                         val settingsIntent = Intent(Settings.ACTION_SETTINGS)
                         startActivity(settingsIntent)
-                        timber.log.Timber.d("General settings opened as final resort")
+                        Timber.d("General settings opened as final resort")
                     }
                 }
             }
@@ -188,7 +181,7 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
             // Android 6.0 미만은 일반 설정 화면
             val intent = Intent(Settings.ACTION_SETTINGS)
             startActivity(intent)
-            timber.log.Timber.d("General settings opened for Android < 6.0")
+            Timber.d("General settings opened for Android < 6.0")
         }
     }
 

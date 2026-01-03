@@ -24,10 +24,13 @@ coroutines = "1.7.3"
 datastore = "1.1.1"
 # WorkManager
 workmanager = "2.9.1"
+# Timber
+timber = "5.0.1"
 # Hilt
 hilt = "2.51.1"
 
 [libraries]
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

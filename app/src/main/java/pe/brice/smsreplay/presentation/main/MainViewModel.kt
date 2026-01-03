@@ -16,6 +16,7 @@ import pe.brice.smsreplay.service.BatteryOptimizationManager
 import pe.brice.smsreplay.service.PermissionManager
 import pe.brice.smsreplay.service.ServiceManager
 import pe.brice.smsreplay.work.SmsQueueManager
+import timber.log.Timber
 
 /**
  * ViewModel for Main Screen
@@ -92,7 +93,7 @@ class MainViewModel : ViewModel(), KoinComponent {
         viewModelScope.launch {
             getSmtpConfigUseCase().collect { config ->
                 val isConfigured = config?.isValid() ?: false
-                timber.log.Timber.e("SMTP config status updated: isConfigured=$isConfigured, config=$config")
+                Timber.e("SMTP config status updated: isConfigured=$isConfigured, config=$config")
                 _uiState.value = _uiState.value.copy(
                     isConfigured = isConfigured
                 )
