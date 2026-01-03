@@ -24,177 +24,88 @@ object EmailTemplateBuilder {
         showAd: Boolean = false
     ): String {
         return """
-            <!DOCTYPE html>
-            <html lang="ko">
+            <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+            <html xmlns="http://www.w3.org/1999/xhtml">
             <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta name="color-scheme" content="light dark">
-                <meta name="supported-color-schemes" content="light dark">
-                <style>
-                    :root {
-                        color-scheme: light dark;
-                    }
-                    
-                    body {
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                        background-color: #f5f5f5;
-                        padding: 20px;
-                        line-height: 1.6;
-                        margin: 0;
-                        color: #333333;
-                    }
-
-                    .email-container {
-                        max-width: 600px;
-                        margin: 0 auto;
-                        background-color: #ffffff;
-                        border-radius: 12px;
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                        overflow: hidden;
-                    }
-
-                    .email-header {
-                        background-color: #FEE500; /* Kakao Yellow */
-                        padding: 20px 24px;
-                        color: #191919; /* Black text */
-                        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-                    }
-
-                    .email-body {
-                        padding: 24px;
-                    }
-
-                    .info-row {
-                        margin-bottom: 12px;
-                        font-size: 14px;
-                    }
-
-                    .info-label {
-                        font-weight: 700;
-                        color: #555555;
-                        margin-right: 8px;
-                    }
-
-                    .info-value {
-                        color: #191919;
-                    }
-
-                    .divider {
-                        border: none;
-                        border-top: 1px solid #eeeeee;
-                        margin: 20px 0;
-                    }
-
-                    .message-content {
-                        white-space: pre-wrap;
-                        word-break: break-word;
-                        color: #191919;
-                        font-size: 16px;
-                        line-height: 1.6;
-                        background-color: #f9f9f9;
-                        padding: 16px;
-                        border-radius: 8px;
-                        border: 1px solid #eeeeee;
-                    }
-
-                    .footer {
-                        margin-top: 20px;
-                        padding-top: 16px;
-                        border-top: 1px solid #eeeeee;
-                        text-align: center;
-                        font-size: 12px;
-                        color: #999999;
-                    }
-
-                    .ad-space {
-                        margin-top: 20px;
-                        height: 100px;
-                        background-color: #f0f0f0;
-                        border-radius: 4px;
-                        ${if (showAd) "" else "display: none;"}
-                    }
-
-                    /* Dark Mode Styles */
-                    @media (prefers-color-scheme: dark) {
-                        body {
-                            background-color: #121212;
-                            color: #e0e0e0;
-                        }
-                        
-                        .email-container {
-                            background-color: #1E1E1E;
-                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-                        }
-                        
-                        .email-header {
-                            background-color: #FEE500; /* Keep yellow for identity, or use darker yellow #C6B300 */
-                            color: #191919; /* Always black on yellow */
-                            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                        }
-                        
-                        .info-label {
-                            color: #aaaaaa;
-                        }
-                        
-                        .info-value {
-                            color: #ffffff;
-                        }
-                        
-                        .divider, .footer {
-                            border-color: #333333;
-                        }
-                        
-                        .message-content {
-                            background-color: #2C2C2C;
-                            color: #e0e0e0;
-                            border-color: #333333;
-                        }
-                        
-                        .ad-space {
-                            background-color: #2C2C2C;
-                        }
-                    }
-
-                    @media only screen and (max-width: 600px) {
-                        body {
-                            padding: 10px;
-                        }
-
-                        .email-header, .email-body {
-                            padding: 16px;
-                        }
-                    }
-                </style>
+                <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                <title>$subject</title>
             </head>
-            <body>
-                <div class="email-container">
-                    <div class="email-header">
-                        <h2 style="margin: 0; font-size: 20px;">SMS 수신 알림</h2>
-                    </div>
-                    <div class="email-body">
-                        <div class="info-row">
-                            <span class="info-label">수신 단말:</span>
-                            <span class="info-value"><strong>${escapeHtml(deviceAlias)}</strong></span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">보낸사람:</span>
-                            <span class="info-value">${escapeHtml(sender)}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">일시:</span>
-                            <span class="info-value">$timestamp</span>
-                        </div>
-                        <hr class="divider">
-                        <div class="message-content">${escapeHtml(body)}</div>
-
-                        <div class="ad-space"></div>
-
-                        <div class="footer">
-                            SMS Replay Service
-                        </div>
-                    </div>
-                </div>
+            <body style="margin: 0; padding: 0; background-color: #f5f5f5;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f5f5f5;">
+                    <tr>
+                        <td align="center" style="padding: 20px 10px;">
+                            <!-- Card Container -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e0e0e0;">
+                                <!-- Header -->
+                                <tr>
+                                    <td bgcolor="#FEE500" style="padding: 20px 24px; color: #191919; border-bottom: 1px solid #f0f0f0;">
+                                        <h2 style="margin: 0; font-family: sans-serif; font-size: 20px; font-weight: bold; color: #191919;">SMS 수신 알림</h2>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Body -->
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <!-- Meta Info Table -->
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 20px;">
+                                            <tr>
+                                                <td width="80" style="padding-bottom: 8px; font-family: sans-serif; font-size: 14px; color: #555555; font-weight: bold;">수신 단말:</td>
+                                                <td style="padding-bottom: 8px; font-family: sans-serif; font-size: 14px; color: #191919;"><strong>${escapeHtml(deviceAlias)}</strong></td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding-bottom: 8px; font-family: sans-serif; font-size: 14px; color: #555555; font-weight: bold;">보낸사람:</td>
+                                                <td style="padding-bottom: 8px; font-family: sans-serif; font-size: 14px; color: #191919;">${escapeHtml(sender)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding-bottom: 8px; font-family: sans-serif; font-size: 14px; color: #555555; font-weight: bold;">일시:</td>
+                                                <td style="padding-bottom: 8px; font-family: sans-serif; font-size: 14px; color: #191919;">$timestamp</td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <!-- Divider -->
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td style="border-top: 1px solid #eeeeee; height: 1px; font-size: 0; line-height: 0;">&nbsp;</td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <div style="height: 20px; font-size: 0; line-height: 0;">&nbsp;</div>
+                                        
+                                        <!-- Message Content Box (Bubble) -->
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td style="background-color: #f9f9f9; padding: 16px; border-radius: 8px; border: 1px solid #eeeeee; font-family: sans-serif; font-size: 16px; line-height: 1.6; color: #191919; white-space: pre-wrap; word-break: break-word;">
+                                                    ${escapeHtml(body)}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <!-- Ad Space -->
+                                        ${if (showAd) """
+                                        <div style="height: 20px; font-size: 0; line-height: 0;">&nbsp;</div>
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td height="100" bgcolor="#f0f0f0" style="border-radius: 4px;">&nbsp;</td>
+                                            </tr>
+                                        </table>
+                                        """ else ""}
+                                        
+                                        <!-- Footer -->
+                                        <div style="height: 20px; font-size: 0; line-height: 0;">&nbsp;</div>
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td style="border-top: 1px solid #eeeeee; padding-top: 16px; text-align: center; font-family: sans-serif; font-size: 12px; color: #999999;">
+                                                    SMS Replay Service
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
             </body>
             </html>
         """.trimIndent()
