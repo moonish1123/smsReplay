@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import pe.brice.smsreplay.presentation.main.MainViewModel
 
+import pe.brice.smsreplay.domain.usecase.CheckSystemHealthUseCase
+
 /**
  * Main Screen
  * Service control, settings navigation, status display
@@ -34,6 +36,39 @@ fun MainScreen(
     viewModel: MainViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    // Device Alias Input Dialog (Show only after permissions are granted)
+    if (uiState.isDeviceAliasMissing && allPermissionsGranted) {
+        var aliasInput by remember { mutableStateOf("") }
+        
+        AlertDialog(
+            onDismissRequest = { /* Prevent dismiss without input */ },
+            title = { Text("단말기 정보 입력") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("이메일 본문에 표시할 이 기기의 전화번호 또는 별칭을 입력해주세요.")
+                    OutlinedTextField(
+                        value = aliasInput,
+                        onValueChange = { aliasInput = it },
+                        label = { Text("예: 010-1234-5678 또는 업무폰") },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { 
+                        if (aliasInput.isNotBlank()) {
+                            viewModel.saveDeviceAlias(aliasInput)
+                        }
+                    },
+                    enabled = aliasInput.isNotBlank()
+                ) {
+                    Text("저장")
+                }
+            }
+        )
+    }
 
     // Security Confirmation Dialog
     if (uiState.showSecurityDialog) {
@@ -112,6 +147,20 @@ fun MainScreen(
                     PermissionRequestCard(
                         onRequestPermissions = onRequestPermissions,
                         onOpenAppSettings = onOpenAppSettings
+                    )
+                }
+            }
+
+            // System Health Card
+            if (uiState.systemIssues.isNotEmpty()) {
+                item {
+                    SystemHealthCard(
+                        issues = uiState.systemIssues,
+                        onRequestPermissions = onRequestPermissions,
+                        onOpenAppSettings = onOpenAppSettings,
+                        onOpenBatteryOptimization = onOpenBatteryOptimization,
+                        onNavigateToSmtpSettings = onNavigateToSmtpSettings,
+                        onStartService = { viewModel.startService() }
                     )
                 }
             }
@@ -199,6 +248,75 @@ fun MainScreen(
                                 color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SystemHealthCard(
+    issues: List<pe.brice.smsreplay.domain.usecase.CheckSystemHealthUseCase.SystemIssue>,
+    onRequestPermissions: () -> Unit,
+    onOpenAppSettings: () -> Unit,
+    onOpenBatteryOptimization: () -> Unit,
+    onNavigateToSmtpSettings: () -> Unit,
+    onStartService: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Text(
+                    text = "⚠️ 시스템 상태 확인 필요",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+
+            issues.forEach { issue ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "• ${issue.message}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    val onClickAction = when (issue) {
+                        is pe.brice.smsreplay.domain.usecase.CheckSystemHealthUseCase.SystemIssue.MissingSmsPermission,
+                        is pe.brice.smsreplay.domain.usecase.CheckSystemHealthUseCase.SystemIssue.MissingNotificationPermission -> onRequestPermissions
+                        is pe.brice.smsreplay.domain.usecase.CheckSystemHealthUseCase.SystemIssue.BatteryOptimizationEnabled -> onOpenBatteryOptimization
+                        is pe.brice.smsreplay.domain.usecase.CheckSystemHealthUseCase.SystemIssue.InvalidSmtpConfig -> onNavigateToSmtpSettings
+                        is pe.brice.smsreplay.domain.usecase.CheckSystemHealthUseCase.SystemIssue.ServiceNotRunning -> onStartService
+                    }
+
+                    TextButton(
+                        onClick = onClickAction,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                    ) {
+                        Text(issue.actionLabel)
                     }
                 }
             }

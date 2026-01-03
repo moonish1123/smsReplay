@@ -175,3 +175,5 @@ local.properties
 /.serena/memories/tech_stack.md
 /.serena/.gitignore
 /.serena/project.yml
+keystore.properties
+keystore/

@@ -100,7 +100,8 @@ class SmtpConfigRepositoryImpl(
             username = username,
             password = password,
             senderEmail = senderEmail,
-            recipientEmail = recipientEmail
+            recipientEmail = recipientEmail,
+            deviceAlias = deviceAlias
         )
     }
 
@@ -114,7 +115,8 @@ class SmtpConfigRepositoryImpl(
             username = username,
             password = password,
             senderEmail = senderEmail,
-            recipientEmail = recipientEmail
+            recipientEmail = recipientEmail,
+            deviceAlias = deviceAlias
         )
     }
 }

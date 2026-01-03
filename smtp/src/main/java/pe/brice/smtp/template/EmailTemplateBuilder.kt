@@ -20,6 +20,7 @@ object EmailTemplateBuilder {
         body: String,
         timestamp: String,
         subject: String,
+        deviceAlias: String, // New parameter
         showAd: Boolean = false
     ): String {
         return """
@@ -29,6 +30,7 @@ object EmailTemplateBuilder {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>
+                    /* ... (styles omitted for brevity, same as before) ... */
                     body {
                         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
                         background-color: #f5f5f5;
@@ -94,7 +96,6 @@ object EmailTemplateBuilder {
                         color: #999999;
                     }
 
-                    /* Ad Space Placeholder - for future Google AdSense integration */
                     .ad-space {
                         margin-top: 20px;
                         height: 100px;
@@ -121,12 +122,12 @@ object EmailTemplateBuilder {
                     </div>
                     <div class="email-body">
                         <div class="info-row">
-                            <span class="info-label">보낸사람:</span>
-                            <span class="info-value">${escapeHtml(sender)}</span>
+                            <span class="info-label">수신 단말:</span>
+                            <span class="info-value"><strong>${escapeHtml(deviceAlias)}</strong></span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">제목:</span>
-                            <span class="info-value">${escapeHtml(subject)}</span>
+                            <span class="info-label">보낸사람:</span>
+                            <span class="info-value">${escapeHtml(sender)}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">일시:</span>
@@ -135,11 +136,10 @@ object EmailTemplateBuilder {
                         <hr class="divider">
                         <div class="message-content">${escapeHtml(body)}</div>
 
-                        <!-- Ad Space Placeholder - for future Google AdSense -->
                         <div class="ad-space"></div>
 
                         <div class="footer">
-                            SMS Forwarding Service
+                            SMS Replay Service
                         </div>
                     </div>
                 </div>

@@ -19,6 +19,7 @@ val UseCaseModule = module {
 
     // Service Control Use Cases
     single { CanStartMonitoringUseCase(get()) }
+    single { CheckSystemHealthUseCase(get(), get()) }
 
     // Sent History Use Cases
     single { GetSentHistoryUseCase(get()) }

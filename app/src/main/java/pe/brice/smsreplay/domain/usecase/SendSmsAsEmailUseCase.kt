@@ -57,20 +57,27 @@ class SendSmsAsEmailUseCase(
 
         // 4. Create email
         val subject = "[FW SMS] ${sms.sender} (${sms.getFormattedTime()})"
+        val deviceAlias = smtpConfig.deviceAlias.ifBlank { "알 수 없는 기기" }
+        
         val htmlTemplate = EmailTemplateBuilder.buildSmsTemplate(
             sender = sms.sender,
             body = sms.body,
             timestamp = sms.getFormattedTime(),
-            subject = subject
+            subject = subject,
+            deviceAlias = deviceAlias
         )
 
+        // Format sender address to include sender phone number as display name
+        // Format: "010-1234-5678 <my-email@example.com>"
+        val fromAddress = "\"${sms.sender}\" <${smtpConfig.senderEmail}>"
+
         val emailMessage = EmailMessage(
-            from = "", // Will be set from SMTP config
-            to = "",   // Will be set from SMTP config
+            from = fromAddress, 
+            to = smtpConfig.recipientEmail,
             subject = subject,
             htmlContent = htmlTemplate,
             timestamp = sms.timestamp,
-            senderPhone = sms.sender  // SMS sender phone number for From header
+            senderPhone = sms.sender
         )
 
         // 5. Send email

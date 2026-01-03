@@ -114,10 +114,13 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
 
     override fun onResume() {
         super.onResume()
-        // 화면이 다시 그려질 때 배터리 최적화 상태 체크
-        // 사용자가 설정 화면에서 배터리 최적화를 끄고 돌아오면 반영됨
+        // 화면이 다시 그려질 때 배터리 최적화 상태 및 시스템 상태 체크
         val batteryOptimizationManager by inject<pe.brice.smsreplay.service.BatteryOptimizationManager>()
         batteryOptimizationManager.checkBatteryOptimization()
+        
+        // Refresh ViewModel state
+        val mainViewModel by inject<pe.brice.smsreplay.presentation.main.MainViewModel>()
+        mainViewModel.refreshPermissions()
     }
 
     private fun requestPermissions() {

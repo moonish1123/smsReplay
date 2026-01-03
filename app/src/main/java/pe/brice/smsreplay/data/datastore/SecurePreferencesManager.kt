@@ -24,6 +24,7 @@ class SecurePreferencesManager(private val context: Context) {
         private const val KEY_PASSWORD = "password"
         private const val KEY_SENDER_EMAIL = "sender_email"
         private const val KEY_RECIPIENT_EMAIL = "recipient_email"
+        private const val KEY_DEVICE_ALIAS = "device_alias" // New key
 
         // Security confirmation
         private const val KEY_SECURITY_CONFIRMED = "security_confirmed"
@@ -54,6 +55,7 @@ class SecurePreferencesManager(private val context: Context) {
             putString(KEY_PASSWORD, config.password) // Automatically encrypted
             putString(KEY_SENDER_EMAIL, config.senderEmail)
             putString(KEY_RECIPIENT_EMAIL, config.recipientEmail)
+            putString(KEY_DEVICE_ALIAS, config.deviceAlias)
         }.apply()
     }
 
@@ -67,7 +69,8 @@ class SecurePreferencesManager(private val context: Context) {
             username = encryptedPrefs.getString(KEY_USERNAME, "") ?: "",
             password = encryptedPrefs.getString(KEY_PASSWORD, "") ?: "",
             senderEmail = encryptedPrefs.getString(KEY_SENDER_EMAIL, "") ?: "",
-            recipientEmail = encryptedPrefs.getString(KEY_RECIPIENT_EMAIL, "") ?: ""
+            recipientEmail = encryptedPrefs.getString(KEY_RECIPIENT_EMAIL, "") ?: "",
+            deviceAlias = encryptedPrefs.getString(KEY_DEVICE_ALIAS, "") ?: ""
         )
     }
 

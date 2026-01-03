@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import pe.brice.smsreplay.domain.usecase.CanStartMonitoringUseCase
+import pe.brice.smsreplay.domain.usecase.CheckSystemHealthUseCase
 import pe.brice.smsreplay.domain.usecase.GetSmtpConfigUseCase
 import pe.brice.smsreplay.domain.usecase.GetSecurityConfirmedUseCase
 import pe.brice.smsreplay.domain.usecase.SetSecurityConfirmedUseCase
@@ -37,6 +38,8 @@ class MainViewModel : ViewModel(), KoinComponent {
     private val canStartMonitoringUseCase: CanStartMonitoringUseCase by inject()
     private val getSecurityConfirmedUseCase: GetSecurityConfirmedUseCase by inject()
     private val setSecurityConfirmedUseCase: SetSecurityConfirmedUseCase by inject()
+    private val checkSystemHealthUseCase: CheckSystemHealthUseCase by inject()
+    private val saveSmtpConfigUseCase: pe.brice.smsreplay.domain.usecase.SaveSmtpConfigUseCase by inject()
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -48,6 +51,16 @@ class MainViewModel : ViewModel(), KoinComponent {
         loadQueueStatus()
         loadSecurityConfirmation()
         loadSmtpConfigStatus()
+        checkSystemHealth() // Initial check
+    }
+
+    // ... (omitted)
+
+    fun checkSystemHealth() {
+        viewModelScope.launch {
+            val issues = checkSystemHealthUseCase()
+            _uiState.value = _uiState.value.copy(systemIssues = issues)
+        }
     }
 
     private fun loadServiceStatus() {
@@ -93,11 +106,26 @@ class MainViewModel : ViewModel(), KoinComponent {
         viewModelScope.launch {
             getSmtpConfigUseCase().collect { config ->
                 val isConfigured = config?.isValid() ?: false
-                Timber.e("SMTP config status updated: isConfigured=$isConfigured, config=$config")
+                // Check if device alias is missing (only if configured or partially configured)
+                val isDeviceAliasMissing = config?.deviceAlias.isNullOrBlank()
+                
+                Timber.e("SMTP config status updated: isConfigured=$isConfigured, aliasMissing=$isDeviceAliasMissing, config=$config")
                 _uiState.value = _uiState.value.copy(
-                    isConfigured = isConfigured
+                    isConfigured = isConfigured,
+                    // If alias is missing, show dialog (but will be gated by permission check in UI)
+                    isDeviceAliasMissing = isDeviceAliasMissing,
+                    currentSmtpConfig = config // Save current config to update it later
                 )
             }
+        }
+    }
+
+    fun saveDeviceAlias(alias: String) {
+        viewModelScope.launch {
+            val currentConfig = _uiState.value.currentSmtpConfig ?: pe.brice.smsreplay.domain.model.SmtpConfig()
+            val newConfig = currentConfig.copy(deviceAlias = alias)
+            saveSmtpConfigUseCase(newConfig)
+            // Dialog will close automatically as isDeviceAliasMissing becomes false
         }
     }
 
@@ -151,6 +179,7 @@ class MainViewModel : ViewModel(), KoinComponent {
     fun refreshPermissions() {
         permissionManager.refresh()
         batteryOptimizationManager.refresh()
+        checkSystemHealth() // Re-check health on refresh
     }
 }
 
@@ -161,5 +190,8 @@ data class MainUiState(
     val queueSize: Int = 0,
     val showSecurityDialog: Boolean = false,
     val isIgnoringBatteryOptimizations: Boolean = false,
-    val isSecurityConfirmed: Boolean = false
+    val isSecurityConfirmed: Boolean = false,
+    val systemIssues: List<pe.brice.smsreplay.domain.usecase.CheckSystemHealthUseCase.SystemIssue> = emptyList(),
+    val isDeviceAliasMissing: Boolean = false,
+    val currentSmtpConfig: pe.brice.smsreplay.domain.model.SmtpConfig? = null
 )

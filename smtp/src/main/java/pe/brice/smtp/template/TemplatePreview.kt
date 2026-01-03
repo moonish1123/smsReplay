@@ -11,10 +11,11 @@ object TemplatePreview {
      */
     fun getSampleTemplate(): String {
         return EmailTemplateBuilder.buildSmsTemplate(
-            sender = "01012345678",
-            body = "안녕하세요! 인증 번호는 [123456]입니다.\n\n이 인증 번호를 입력하여 본인 확인을 완료해 주세요.",
-            timestamp = "2024-12-26 14:30",
-            subject = "[FW SMS] 01012345678 (2024-12-26 14:30)"
+            sender = "010-1234-5678",
+            body = "안녕하세요. 인증번호는 [123456] 입니다.\n타인에게 절대 노출하지 마세요.",
+            timestamp = "2024-12-26 14:30:00",
+            subject = "[FW SMS] 010-1234-5678",
+            deviceAlias = "내 업무용 폰"
         )
     }
 
