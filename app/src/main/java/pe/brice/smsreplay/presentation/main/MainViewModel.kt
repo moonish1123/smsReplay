@@ -59,9 +59,11 @@ class MainViewModel : ViewModel(), KoinComponent {
 
     fun checkSystemHealth() {
         viewModelScope.launch {
-            // Short delay to ensure system settings are updated
-            kotlinx.coroutines.delay(300)
+            Timber.d("Checking system health...")
+            // Give system some time to update settings database
+            kotlinx.coroutines.delay(500)
             val issues = checkSystemHealthUseCase()
+            Timber.d("System health check completed. Found ${issues.size} issues.")
             _uiState.value = _uiState.value.copy(systemIssues = issues)
         }
     }
@@ -70,6 +72,7 @@ class MainViewModel : ViewModel(), KoinComponent {
         viewModelScope.launch {
             serviceControl.isServiceRunning.collect { isRunning ->
                 _uiState.value = _uiState.value.copy(isServiceRunning = isRunning)
+                checkSystemHealth() // Re-check issues when service starts/stops
             }
         }
     }
@@ -78,6 +81,7 @@ class MainViewModel : ViewModel(), KoinComponent {
         viewModelScope.launch {
             permissionChecker.hasRequiredPermissions.collect { hasPermissions ->
                 _uiState.value = _uiState.value.copy(hasPermissions = hasPermissions)
+                checkSystemHealth() // Re-check issues when permissions change
             }
         }
     }
@@ -86,6 +90,7 @@ class MainViewModel : ViewModel(), KoinComponent {
         viewModelScope.launch {
             batteryOptimizationChecker.isIgnoringBatteryOptimizations.collect { isIgnoring ->
                 _uiState.value = _uiState.value.copy(isIgnoringBatteryOptimizations = isIgnoring)
+                checkSystemHealth() // Re-check issues when battery optimization changes
             }
         }
     }
@@ -115,6 +120,7 @@ class MainViewModel : ViewModel(), KoinComponent {
                     isConfigured = isConfigured,
                     currentSmtpConfig = config
                 )
+                checkSystemHealth() // Re-check issues when SMTP config changes
             }
         }
     }

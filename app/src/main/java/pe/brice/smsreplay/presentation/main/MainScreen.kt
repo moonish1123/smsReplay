@@ -37,7 +37,12 @@ fun MainScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Security Confirmation Dialog
+    // Refresh status when screen becomes visible or permissions change
+    LaunchedEffect(allPermissionsGranted) {
+        viewModel.refreshPermissions()
+    }
+
+    // Device Alias Input Dialog (Show only after permissions are granted)
     if (uiState.showSecurityDialog) {
         var userInput by remember { mutableStateOf("") }
 

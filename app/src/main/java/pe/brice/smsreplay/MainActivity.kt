@@ -41,6 +41,8 @@ import pe.brice.smsreplay.domain.service.PermissionChecker
 
 class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent {
 
+    private val mainViewModel: pe.brice.smsreplay.presentation.main.MainViewModel by viewModel()
+
     private val permissions = mutableListOf(
         Manifest.permission.RECEIVE_SMS,
         Manifest.permission.READ_SMS
@@ -121,8 +123,7 @@ class MainActivity : ComponentActivity(), org.koin.core.component.KoinComponent 
         val batteryOptimizationChecker: pe.brice.smsreplay.domain.service.BatteryOptimizationChecker by inject()
         batteryOptimizationChecker.checkBatteryOptimization()
 
-        // Use the activity-scoped viewModel
-        val mainViewModel: pe.brice.smsreplay.presentation.main.MainViewModel by viewModel()
+        // Refresh the shared ViewModel state
         mainViewModel.refreshPermissions()
     }
 
