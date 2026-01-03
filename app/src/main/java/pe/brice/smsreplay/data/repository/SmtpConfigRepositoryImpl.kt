@@ -77,14 +77,17 @@ class SmtpConfigRepositoryImpl(
     private suspend fun refreshFromStorage() {
         try {
             val configData = securePreferencesManager.getSmtpConfig()
-            val newConfig = if (configData.serverAddress.isNotBlank() &&
-                                 configData.username.isNotBlank()) {
+            // Allow returning config if either SMTP is configured OR device alias is set
+            val hasSmtpConfig = configData.serverAddress.isNotBlank() && configData.username.isNotBlank()
+            val hasDeviceAlias = configData.deviceAlias.isNotBlank()
+            
+            val newConfig = if (hasSmtpConfig || hasDeviceAlias) {
                 configData.toDomainModel()
             } else {
                 null
             }
             cachedConfig.value = newConfig
-            Timber.e("SMTP config refreshed: server=${configData.serverAddress}, username=${configData.username}, isConfigured=${newConfig != null}")
+            Timber.e("SMTP config refreshed: server=${configData.serverAddress}, alias=${configData.deviceAlias}, isConfigured=${newConfig != null}")
         } catch (e: Exception) {
             Timber.e(e, "Failed to refresh SMTP config")
         }

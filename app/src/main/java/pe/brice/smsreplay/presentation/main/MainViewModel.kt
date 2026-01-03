@@ -125,8 +125,15 @@ class MainViewModel : ViewModel(), KoinComponent {
         viewModelScope.launch {
             val currentConfig = _uiState.value.currentSmtpConfig ?: pe.brice.smsreplay.domain.model.SmtpConfig()
             val newConfig = currentConfig.copy(deviceAlias = alias)
+            Timber.d("Saving device alias: $alias")
             saveSmtpConfigUseCase(newConfig)
-            // Dialog will close automatically as isDeviceAliasMissing becomes false
+            
+            // Force update local state immediately to close dialog
+            // The flow collection will eventually update it, but this makes UI responsive
+            _uiState.value = _uiState.value.copy(
+                isDeviceAliasMissing = false,
+                currentSmtpConfig = newConfig
+            )
         }
     }
 
