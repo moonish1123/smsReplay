@@ -8,7 +8,7 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 .DS_Store
-/build
+*/build
 /captures
 .externalNativeBuild
 .cxx
@@ -168,3 +168,10 @@ local.properties
 /smtp/build/tmp/kotlin-classes/debug/pe/brice/smtp/sender/SmtpException.class
 /smtp/build/tmp/kotlin-classes/debug/pe/brice/smtp/template/EmailTemplateBuilder.class
 /smtp/build/tmp/kotlin-classes/debug/pe/brice/smtp/template/TemplatePreview.class
+/.serena/memories/completion_guidelines.md
+/.serena/memories/project_overview.md
+/.serena/memories/style_and_conventions.md
+/.serena/memories/suggested_commands.md
+/.serena/memories/tech_stack.md
+/.serena/.gitignore
+/.serena/project.yml

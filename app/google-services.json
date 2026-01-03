@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "926279769276",
+    "project_id": "smsrelay-730d0",
+    "storage_bucket": "smsrelay-730d0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:926279769276:android:1632c3304891cf478384b9",
+        "android_client_info": {
+          "package_name": "pe.brice.smsreplay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjLgmMjffg3EmacwSlm9TbVBo2V8TSj_k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
