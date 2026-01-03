@@ -50,6 +50,8 @@ class SmsQueueManager(
             val id = smsQueueRepository.enqueue(sms)
             if (id > 0) {
                 Timber.i("SMS enqueued successfully (ID: $id) from ${sms.sender}")
+                // Trigger retry scheduling immediately
+                processNext()
                 true
             } else {
                 Timber.e("Failed to enqueue SMS from ${sms.sender}")
@@ -128,18 +130,17 @@ class SmsQueueManager(
 
     /**
      * Remove failed SMS from queue (max retries reached)
+     * For the new "Flush" strategy, we might want to KEEP it in queue instead of deleting,
+     * For the new "Flush" strategy, we might want to KEEP it in queue instead of deleting,
+     * so it can be picked up later when network is restored.
+     * But currently, let's just log it and NOT delete it, effectively "parking" it.
      */
     suspend fun markAsFailed(sms: SmsMessage): Boolean {
         return try {
-            val pendingSms = smsQueueRepository.findByTimestamp(sms.timestamp)
-            if (pendingSms != null) {
-                smsQueueRepository.delete(pendingSms.id)
-                Timber.w("SMS marked as failed and removed from queue: ${sms.sender}")
-                true
-            } else {
-                Timber.w("SMS not found in queue: ${sms.sender}")
-                false
-            }
+            Timber.e("SMS max retries reached: ${sms.sender}. Keeping in queue for later flush.")
+            // Do NOT delete from queue, so it can be retried later when network is restored
+            // smsQueueRepository.delete(pendingSms.id) 
+            true
         } catch (e: Exception) {
             Timber.e(e, "Error marking SMS as failed: ${sms.sender}")
             false
@@ -147,10 +148,53 @@ class SmsQueueManager(
     }
 
     /**
-     * Get all pending SMS as Flow
+     * Flush queue: Try to send all pending messages immediately
+     * Called when a new SMS is successfully sent or network is restored
      */
-    fun getAllPending(): Flow<List<pe.brice.smsreplay.data.local.database.PendingSmsEntity>> {
-        return smsQueueRepository.getAllPendingSms()
+    suspend fun flushQueue(sendUseCase: pe.brice.smsreplay.domain.usecase.SendSmsAsEmailUseCase) {
+        scope.launch {
+            try {
+                // Get ALL pending messages, not just one
+                // We need to fetch them from repository manually because getAllPendingSms() is a Flow
+                // Assuming repository has a suspend function to get list. If not, we might need to add it or take from Flow.
+                // For now, let's process one by one using a loop until queue is empty or error occurs.
+                
+                Timber.i("Flushing SMS queue...")
+                
+                var processedCount = 0
+                while (true) {
+                    val nextSms = smsQueueRepository.getNextPendingSms() ?: break
+                    
+                    Timber.d("Flushing: Processing SMS from ${nextSms.sender} (retry: ${nextSms.retryCount})")
+                    
+                    val domainSms = SmsMessage(
+                        sender = nextSms.sender,
+                        body = nextSms.body,
+                        timestamp = nextSms.timestamp
+                    )
+                    
+                    val result = sendUseCase(domainSms)
+                    
+                    if (result is pe.brice.smsreplay.domain.model.SendingResult.Success) {
+                        markAsSent(domainSms)
+                        processedCount++
+                    } else {
+                        Timber.w("Flush interrupted: Failed to send SMS from ${nextSms.sender}. Stopping flush.")
+                        incrementRetryCount(domainSms)
+                        break // Stop flushing on first error to prevent spamming failures
+                    }
+                }
+                
+                if (processedCount > 0) {
+                    Timber.i("Flushed $processedCount messages from queue")
+                } else {
+                    Timber.d("Queue flush finished (no messages sent)")
+                }
+                
+            } catch (e: Exception) {
+                Timber.e(e, "Error flushing queue")
+            }
+        }
     }
 
     /**

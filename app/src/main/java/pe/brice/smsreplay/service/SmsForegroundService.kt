@@ -99,6 +99,7 @@ class SmsForegroundService : android.app.Service(), KoinComponent {
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(serviceJob + Dispatchers.IO)
     private val sendSmsAsEmailUseCase: SendSmsAsEmailUseCase by inject()
+    private val smsQueueManager: pe.brice.smsreplay.work.SmsQueueManager by inject()
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -122,6 +123,12 @@ class SmsForegroundService : android.app.Service(), KoinComponent {
         }
 
         createNotificationChannel()
+
+        // Try to flush queue on service start (e.g. after reboot or crash restart)
+        serviceScope.launch {
+            Timber.i("Service started. Checking for pending messages...")
+            smsQueueManager.flushQueue(sendSmsAsEmailUseCase)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -184,13 +191,25 @@ class SmsForegroundService : android.app.Service(), KoinComponent {
                 when (result) {
                     is SendingResult.Success -> {
                         Timber.i("✅ Email sent successfully for SMS from ${sms.sender}")
+                        // Flush any pending messages in queue since network seems to be working
+                        smsQueueManager.flushQueue(sendSmsAsEmailUseCase)
                     }
                     is SendingResult.Failure -> {
                         val failure = result as SendingResult.Failure
                         Timber.e("❌ Failed to send email: ${failure.message}")
+                        
+                        // Enqueue for later retry if error is recoverable (e.g. Network, SMTP)
+                        // Or just enqueue everything to be safe? 
+                        // Let's enqueue everything for now to ensure no data loss.
+                        // The worker/flush logic will decide if it can be sent later.
+                        smsQueueManager.enqueue(sms)
+                        Timber.i("💾 SMS queued for retry due to failure")
                     }
                     is SendingResult.Retry -> {
                         Timber.w("⏰ Scheduled retry for SMS from ${sms.sender}")
+                        // Explicitly requested retry
+                        smsQueueManager.enqueue(sms)
+                        Timber.i("💾 SMS queued for explicit retry")
                     }
                 }
             } catch (e: Exception) {
